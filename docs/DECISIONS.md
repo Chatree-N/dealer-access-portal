@@ -48,3 +48,9 @@ This file tracks significant technical and architectural decisions made througho
 ## 11. Design Tokens Update (Axe Accessibility)
 - **Finding:** The design token for secondary text (`#6B7280`) on `#F3F4F6` failed WCAG 2.1 AA color contrast (4.39:1 vs required 4.5:1). On `#FAFAFB` it is 4.63:1 and on `#F7F8FA` it is 4.55:1 (both pass).
 - **Decision:** Modified the implementation to use `#4B5563` (a darker shade) for secondary text when placed on `#F3F4F6` or darker grey surfaces to ensure accessibility compliance.
+
+- I added fixtures/seed-data.json (34 branches, 4 dealers, 9 rooms, sample requesters) and fixtures/branches.csv. Use seed-data.json as the single source of truth: replace the contents of fixtures/branches.ts with a typed loader over seed-data.json (no duplicated data). Treat status "inactive" as notfound (same generic response). Keep leading zeros (codes are strings). Cover these in unit tests: 0042, 9999, 6001, a dealer with no emailDomains (no warning), a dealer with two domains, uppercase email. Keep room URLs out of anything imported by client components.
+
+## 12. Mock Logic updates (Phase 2A)
+- **Decision:** Phase 2 mock lookup runs client-side; Phase 3 moves lookup and domain check to the server and returns only masked data.
+- **Rule:** The masking rule is "First word + space + first letter of the second word + …", returning standard generic responses for inactive or invalid branches.

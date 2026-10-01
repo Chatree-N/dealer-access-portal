@@ -1,0 +1,35 @@
+code,dealer,name,province,region,room,status
+1234,Lotus Telecom,LOTUS CENTRAL NAKHONSAWAN,Nakhon Sawan,Central,Lotus Telecom - Central,active
+5678,Harbor Mobile Group,HARBOR WALK CHON BURI,Chon Buri,East,Harbor Mobile - East & Central,active
+2468,Orchid Devices Co.,ORCHID SQUARE KHON KAEN,Khon Kaen,Northeast,Orchid Devices - All regions,active
+0042,Lotus Telecom,LOTUS HUB (RIVERSIDE),Bangkok,Bangkok Metro,Lotus Telecom - Bangkok Metro,active
+1101,Lotus Telecom,LOTUS PLAZA CHIANG MAI,Chiang Mai,North,Lotus Telecom - North,active
+1102,Lotus Telecom,LOTUS PLAZA CHIANG RAI,Chiang Rai,North,Lotus Telecom - North,active
+1103,Lotus Telecom,NORTH PLAZA LAMPANG,Lampang,North,Lotus Telecom - North,active
+1204,Lotus Telecom,LOTUS HUB (BANG KAPI),Bangkok,Bangkok Metro,Lotus Telecom - Bangkok Metro,active
+1205,Lotus Telecom,LOTUS HUB (RAMA 9),Bangkok,Bangkok Metro,Lotus Telecom - Bangkok Metro,active
+1206,Lotus Telecom,LOTUS MINI (MIN BURI),Bangkok,Bangkok Metro,Lotus Telecom - Bangkok Metro,active
+1307,Lotus Telecom,LOTUS PLAZA NONTHABURI,Nonthaburi,Bangkok Metro,Lotus Telecom - Bangkok Metro,active
+1308,Lotus Telecom,LOTUS PLAZA AYUTTHAYA,Phra Nakhon Si Ayutthaya,Central,Lotus Telecom - Central,active
+1409,Lotus Telecom,LOTUS PLAZA KORAT,Nakhon Ratchasima,Northeast,Lotus Telecom - Northeast,active
+1410,Lotus Telecom,LOTUS PLAZA UDON THANI,Udon Thani,Northeast,Lotus Telecom - Northeast,active
+1511,Lotus Telecom,LOTUS PLAZA HAT YAI,Songkhla,South,Lotus Telecom - South,active
+1512,Lotus Telecom,LOTUS PLAZA PHUKET TOWN,Phuket,South,Lotus Telecom - South,active
+3101,Harbor Mobile Group,HARBOR WALK RAYONG,Rayong,East,Harbor Mobile - East & Central,active
+3102,Harbor Mobile Group,HARBOR WALK PATTAYA NORTH,Chon Buri,East,Harbor Mobile - East & Central,active
+3103,Harbor Mobile Group,HARBOR WALK CHANTHABURI,Chanthaburi,East,Harbor Mobile - East & Central,active
+3204,Harbor Mobile Group,HARBOR MART SARABURI,Saraburi,Central,Harbor Mobile - East & Central,active
+3205,Harbor Mobile Group,HARBOR MART NAKHON PATHOM,Nakhon Pathom,Central,Harbor Mobile - East & Central,active
+3306,Harbor Mobile Group,HARBOR WALK PHITSANULOK,Phitsanulok,North,Harbor Mobile - North & Northeast,active
+3307,Harbor Mobile Group,HARBOR WALK UBON,Ubon Ratchathani,Northeast,Harbor Mobile - North & Northeast,active
+3308,Harbor Mobile Group,HARBOR EXPRESS (SUKHUMVIT 71),Bangkok,Bangkok Metro,Harbor Mobile - East & Central,active
+3409,Harbor Mobile Group,HARBOR WALK SURAT THANI,Surat Thani,South,Harbor Mobile - East & Central,active
+4101,Orchid Devices Co.,ORCHID SQUARE CHACHOENGSAO,Chachoengsao,East,Orchid Devices - All regions,active
+4102,Orchid Devices Co.,ORCHID SQUARE LOP BURI,Lop Buri,Central,Orchid Devices - All regions,active
+4203,Orchid Devices Co.,ORCHID SQUARE NAKHON SI THAMMARAT,Nakhon Si Thammarat,South,Orchid Devices - All regions,active
+4204,Orchid Devices Co.,ORCHID POINT (THONBURI),Bangkok,Bangkok Metro,Orchid Devices - All regions,active
+4305,Orchid Devices Co.,ORCHID SQUARE MAHA SARAKHAM,Maha Sarakham,Northeast,Orchid Devices - All regions,active
+4306,Orchid Devices Co.,ORCHID SQUARE PHRAE,Phrae,North,Orchid Devices - All regions,active
+5001,Maple Wireless Co.,MAPLE CORNER SAMUT PRAKAN,Samut Prakan,Bangkok Metro,Maple Wireless - All regions,active
+9999,Lotus Telecom,LOTUS CLOSED BRANCH (DEMO),Bangkok,Bangkok Metro,Lotus Telecom - Bangkok Metro,inactive
+6001,Orchid Devices Co.,ORCHID SQUARE VERY LONG BRANCH NAME FOR LAYOUT TESTING (PHASE 2 EDGE CASE),Khon Kaen,Northeast,Orchid Devices - All regions,active

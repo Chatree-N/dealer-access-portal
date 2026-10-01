@@ -1,0 +1,425 @@
+{
+  "_note": "FICTIONAL DEMO DATA. Dealers, branches and domains are invented; *.example domains are reserved and never resolve.",
+  "dealers": [
+    {
+      "id": "d-lotus",
+      "name": "Lotus Telecom",
+      "emailDomains": [
+        "lotustelecom.example",
+        "lotus-retail.example"
+      ]
+    },
+    {
+      "id": "d-harbor",
+      "name": "Harbor Mobile Group",
+      "emailDomains": [
+        "harbormobile.example"
+      ]
+    },
+    {
+      "id": "d-orchid",
+      "name": "Orchid Devices Co.",
+      "emailDomains": [
+        "orchiddevices.example"
+      ]
+    },
+    {
+      "id": "d-maple",
+      "name": "Maple Wireless Co.",
+      "emailDomains": []
+    }
+  ],
+  "rooms": [
+    {
+      "id": "r-lotus-bkk",
+      "name": "Lotus Telecom - Bangkok Metro",
+      "url": "https://openchat.example/rooms/lotus-bkk"
+    },
+    {
+      "id": "r-lotus-central",
+      "name": "Lotus Telecom - Central",
+      "url": "https://openchat.example/rooms/lotus-central"
+    },
+    {
+      "id": "r-lotus-north",
+      "name": "Lotus Telecom - North",
+      "url": "https://openchat.example/rooms/lotus-north"
+    },
+    {
+      "id": "r-lotus-ne",
+      "name": "Lotus Telecom - Northeast",
+      "url": "https://openchat.example/rooms/lotus-northeast"
+    },
+    {
+      "id": "r-lotus-south",
+      "name": "Lotus Telecom - South",
+      "url": "https://openchat.example/rooms/lotus-south"
+    },
+    {
+      "id": "r-harbor-east",
+      "name": "Harbor Mobile - East & Central",
+      "url": "https://openchat.example/rooms/harbor-east-central"
+    },
+    {
+      "id": "r-harbor-north",
+      "name": "Harbor Mobile - North & Northeast",
+      "url": "https://openchat.example/rooms/harbor-north-ne"
+    },
+    {
+      "id": "r-orchid-all",
+      "name": "Orchid Devices - All regions",
+      "url": "https://openchat.example/rooms/orchid-all"
+    },
+    {
+      "id": "r-maple-all",
+      "name": "Maple Wireless - All regions",
+      "url": "https://openchat.example/rooms/maple-all"
+    }
+  ],
+  "branches": [
+    {
+      "code": "1234",
+      "dealerId": "d-lotus",
+      "name": "LOTUS CENTRAL NAKHONSAWAN",
+      "province": "Nakhon Sawan",
+      "region": "Central",
+      "roomId": "r-lotus-central",
+      "status": "active"
+    },
+    {
+      "code": "5678",
+      "dealerId": "d-harbor",
+      "name": "HARBOR WALK CHON BURI",
+      "province": "Chon Buri",
+      "region": "East",
+      "roomId": "r-harbor-east",
+      "status": "active"
+    },
+    {
+      "code": "2468",
+      "dealerId": "d-orchid",
+      "name": "ORCHID SQUARE KHON KAEN",
+      "province": "Khon Kaen",
+      "region": "Northeast",
+      "roomId": "r-orchid-all",
+      "status": "active"
+    },
+    {
+      "code": "0042",
+      "dealerId": "d-lotus",
+      "name": "LOTUS HUB (RIVERSIDE)",
+      "province": "Bangkok",
+      "region": "Bangkok Metro",
+      "roomId": "r-lotus-bkk",
+      "status": "active"
+    },
+    {
+      "code": "1101",
+      "dealerId": "d-lotus",
+      "name": "LOTUS PLAZA CHIANG MAI",
+      "province": "Chiang Mai",
+      "region": "North",
+      "roomId": "r-lotus-north",
+      "status": "active"
+    },
+    {
+      "code": "1102",
+      "dealerId": "d-lotus",
+      "name": "LOTUS PLAZA CHIANG RAI",
+      "province": "Chiang Rai",
+      "region": "North",
+      "roomId": "r-lotus-north",
+      "status": "active"
+    },
+    {
+      "code": "1103",
+      "dealerId": "d-lotus",
+      "name": "NORTH PLAZA LAMPANG",
+      "province": "Lampang",
+      "region": "North",
+      "roomId": "r-lotus-north",
+      "status": "active"
+    },
+    {
+      "code": "1204",
+      "dealerId": "d-lotus",
+      "name": "LOTUS HUB (BANG KAPI)",
+      "province": "Bangkok",
+      "region": "Bangkok Metro",
+      "roomId": "r-lotus-bkk",
+      "status": "active"
+    },
+    {
+      "code": "1205",
+      "dealerId": "d-lotus",
+      "name": "LOTUS HUB (RAMA 9)",
+      "province": "Bangkok",
+      "region": "Bangkok Metro",
+      "roomId": "r-lotus-bkk",
+      "status": "active"
+    },
+    {
+      "code": "1206",
+      "dealerId": "d-lotus",
+      "name": "LOTUS MINI (MIN BURI)",
+      "province": "Bangkok",
+      "region": "Bangkok Metro",
+      "roomId": "r-lotus-bkk",
+      "status": "active"
+    },
+    {
+      "code": "1307",
+      "dealerId": "d-lotus",
+      "name": "LOTUS PLAZA NONTHABURI",
+      "province": "Nonthaburi",
+      "region": "Bangkok Metro",
+      "roomId": "r-lotus-bkk",
+      "status": "active"
+    },
+    {
+      "code": "1308",
+      "dealerId": "d-lotus",
+      "name": "LOTUS PLAZA AYUTTHAYA",
+      "province": "Phra Nakhon Si Ayutthaya",
+      "region": "Central",
+      "roomId": "r-lotus-central",
+      "status": "active"
+    },
+    {
+      "code": "1409",
+      "dealerId": "d-lotus",
+      "name": "LOTUS PLAZA KORAT",
+      "province": "Nakhon Ratchasima",
+      "region": "Northeast",
+      "roomId": "r-lotus-ne",
+      "status": "active"
+    },
+    {
+      "code": "1410",
+      "dealerId": "d-lotus",
+      "name": "LOTUS PLAZA UDON THANI",
+      "province": "Udon Thani",
+      "region": "Northeast",
+      "roomId": "r-lotus-ne",
+      "status": "active"
+    },
+    {
+      "code": "1511",
+      "dealerId": "d-lotus",
+      "name": "LOTUS PLAZA HAT YAI",
+      "province": "Songkhla",
+      "region": "South",
+      "roomId": "r-lotus-south",
+      "status": "active"
+    },
+    {
+      "code": "1512",
+      "dealerId": "d-lotus",
+      "name": "LOTUS PLAZA PHUKET TOWN",
+      "province": "Phuket",
+      "region": "South",
+      "roomId": "r-lotus-south",
+      "status": "active"
+    },
+    {
+      "code": "3101",
+      "dealerId": "d-harbor",
+      "name": "HARBOR WALK RAYONG",
+      "province": "Rayong",
+      "region": "East",
+      "roomId": "r-harbor-east",
+      "status": "active"
+    },
+    {
+      "code": "3102",
+      "dealerId": "d-harbor",
+      "name": "HARBOR WALK PATTAYA NORTH",
+      "province": "Chon Buri",
+      "region": "East",
+      "roomId": "r-harbor-east",
+      "status": "active"
+    },
+    {
+      "code": "3103",
+      "dealerId": "d-harbor",
+      "name": "HARBOR WALK CHANTHABURI",
+      "province": "Chanthaburi",
+      "region": "East",
+      "roomId": "r-harbor-east",
+      "status": "active"
+    },
+    {
+      "code": "3204",
+      "dealerId": "d-harbor",
+      "name": "HARBOR MART SARABURI",
+      "province": "Saraburi",
+      "region": "Central",
+      "roomId": "r-harbor-east",
+      "status": "active"
+    },
+    {
+      "code": "3205",
+      "dealerId": "d-harbor",
+      "name": "HARBOR MART NAKHON PATHOM",
+      "province": "Nakhon Pathom",
+      "region": "Central",
+      "roomId": "r-harbor-east",
+      "status": "active"
+    },
+    {
+      "code": "3306",
+      "dealerId": "d-harbor",
+      "name": "HARBOR WALK PHITSANULOK",
+      "province": "Phitsanulok",
+      "region": "North",
+      "roomId": "r-harbor-north",
+      "status": "active"
+    },
+    {
+      "code": "3307",
+      "dealerId": "d-harbor",
+      "name": "HARBOR WALK UBON",
+      "province": "Ubon Ratchathani",
+      "region": "Northeast",
+      "roomId": "r-harbor-north",
+      "status": "active"
+    },
+    {
+      "code": "3308",
+      "dealerId": "d-harbor",
+      "name": "HARBOR EXPRESS (SUKHUMVIT 71)",
+      "province": "Bangkok",
+      "region": "Bangkok Metro",
+      "roomId": "r-harbor-east",
+      "status": "active"
+    },
+    {
+      "code": "3409",
+      "dealerId": "d-harbor",
+      "name": "HARBOR WALK SURAT THANI",
+      "province": "Surat Thani",
+      "region": "South",
+      "roomId": "r-harbor-east",
+      "status": "active"
+    },
+    {
+      "code": "4101",
+      "dealerId": "d-orchid",
+      "name": "ORCHID SQUARE CHACHOENGSAO",
+      "province": "Chachoengsao",
+      "region": "East",
+      "roomId": "r-orchid-all",
+      "status": "active"
+    },
+    {
+      "code": "4102",
+      "dealerId": "d-orchid",
+      "name": "ORCHID SQUARE LOP BURI",
+      "province": "Lop Buri",
+      "region": "Central",
+      "roomId": "r-orchid-all",
+      "status": "active"
+    },
+    {
+      "code": "4203",
+      "dealerId": "d-orchid",
+      "name": "ORCHID SQUARE NAKHON SI THAMMARAT",
+      "province": "Nakhon Si Thammarat",
+      "region": "South",
+      "roomId": "r-orchid-all",
+      "status": "active"
+    },
+    {
+      "code": "4204",
+      "dealerId": "d-orchid",
+      "name": "ORCHID POINT (THONBURI)",
+      "province": "Bangkok",
+      "region": "Bangkok Metro",
+      "roomId": "r-orchid-all",
+      "status": "active"
+    },
+    {
+      "code": "4305",
+      "dealerId": "d-orchid",
+      "name": "ORCHID SQUARE MAHA SARAKHAM",
+      "province": "Maha Sarakham",
+      "region": "Northeast",
+      "roomId": "r-orchid-all",
+      "status": "active"
+    },
+    {
+      "code": "4306",
+      "dealerId": "d-orchid",
+      "name": "ORCHID SQUARE PHRAE",
+      "province": "Phrae",
+      "region": "North",
+      "roomId": "r-orchid-all",
+      "status": "active"
+    },
+    {
+      "code": "5001",
+      "dealerId": "d-maple",
+      "name": "MAPLE CORNER SAMUT PRAKAN",
+      "province": "Samut Prakan",
+      "region": "Bangkok Metro",
+      "roomId": "r-maple-all",
+      "status": "active"
+    },
+    {
+      "code": "9999",
+      "dealerId": "d-lotus",
+      "name": "LOTUS CLOSED BRANCH (DEMO)",
+      "province": "Bangkok",
+      "region": "Bangkok Metro",
+      "roomId": "r-lotus-bkk",
+      "status": "inactive"
+    },
+    {
+      "code": "6001",
+      "dealerId": "d-orchid",
+      "name": "ORCHID SQUARE VERY LONG BRANCH NAME FOR LAYOUT TESTING (PHASE 2 EDGE CASE)",
+      "province": "Khon Kaen",
+      "region": "Northeast",
+      "roomId": "r-orchid-all",
+      "status": "active"
+    }
+  ],
+  "sampleRequesters": [
+    {
+      "firstName": "Anong",
+      "lastName": "Siriwat",
+      "email": "anong.siriwat@lotustelecom.example",
+      "note": "matches dealer domain"
+    },
+    {
+      "firstName": "Preecha",
+      "lastName": "Rattana",
+      "email": "preecha.r@lotus-retail.example",
+      "note": "matches 2nd Lotus domain"
+    },
+    {
+      "firstName": "Malee",
+      "lastName": "Chaiyo",
+      "email": "malee.chaiyo@mail.example",
+      "note": "does not match -> domain warning"
+    },
+    {
+      "firstName": "Somsri",
+      "lastName": "Boonma",
+      "email": "SOMSRI@HarborMobile.example",
+      "note": "uppercase, still matches"
+    },
+    {
+      "firstName": "Kanda",
+      "lastName": "Wong-Ngam",
+      "email": "kanda@maplewireless.example",
+      "note": "dealer has no domains -> no warning"
+    },
+    {
+      "firstName": "Dupe",
+      "lastName": "Tester",
+      "email": "duplicate@lotustelecom.example",
+      "note": "use for the dupe scenario (already pending)"
+    }
+  ]
+}
