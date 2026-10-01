@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#FFFFFF}a{color:#6D3FE0}a:hover{color:#5B2FCB}*{box-sizing:border-box}textarea::placeholder,input::placeholder{color:#6B7280;opacity:1;font-style:italic}</style>
+</helmet>
+<div style="min-height:100vh;background:#FFFFFF;font-family:Inter,system-ui,sans-serif;color:#111827;-webkit-font-smoothing:antialiased">
+<header style="position:sticky;top:0;z-index:30;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid #E5E7EB">
+  <div style="max-width:1360px;margin:0 auto;padding:14px 32px;display:flex;align-items:center;gap:16px 24px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0">
+      <div aria-hidden="true" style="width:34px;height:34px;border-radius:9px;background:#6D3FE0;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:12px;height:12px;border-radius:3px;background:#FFFFFF"></div></div>
+      <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+        <div style="font-size:16px;font-weight:700;color:#0F1220">Line OpenChat Access Request</div>
+        <div style="font-size:13px;color:#6B7280">For dealer branch coordinators</div>
+      </div>
+    </div>
+    <nav role="tablist" aria-label="Design sections" style="margin-left:auto;display:flex;gap:4px;padding:4px;background:#F3F4F6;border-radius:12px;overflow-x:auto;max-width:100%">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+        <button type="button" role="tab" aria-selected="{{ t.sel }}" onClick="{{ t.go }}" style="flex:none;white-space:nowrap;min-height:40px;padding:0 16px;border-radius:9px;border:0;background:{{ t.bg }};color:{{ t.fg }};box-shadow:{{ t.sh }};font-family:inherit;font-size:14px;font-weight:600;cursor:pointer" style-focus="outline:none;box-shadow:0 0 0 2px rgba(109,63,224,.3)">{{ t.label }}</button>
+      </sc-for>
+    </nav>
+  </div>
+</header>
+
+<main style="max-width:1360px;margin:0 auto;padding:32px clamp(16px,3vw,32px)">
+
+<sc-if value="{{ tProto }}" hint-placeholder-val="{{ true }}">
+  <section style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div role="radiogroup" aria-label="Viewport" style="display:flex;gap:4px;padding:4px;border:1px solid #E5E7EB;border-radius:12px;background:#FFFFFF">
+        <button type="button" role="radio" aria-checked="{{ vDesk }}" onClick="{{ setDesk }}" style="white-space:nowrap;min-height:36px;padding:0 14px;border-radius:8px;border:0;background:{{ deskBg }};color:{{ deskFg }};font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Desktop (fluid)</button>
+        <button type="button" role="radio" aria-checked="{{ vMob }}" onClick="{{ setMob }}" style="white-space:nowrap;min-height:36px;padding:0 14px;border-radius:8px;border:0;background:{{ mobBg }};color:{{ mobFg }};font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Mobile 375</button>
+      </div>
+      <details style="flex:1;min-width:280px;max-width:640px;border:1px dashed #C5CAD3;border-radius:12px;padding:10px 14px;background:#FAFAFB">
+        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:#374151;display:flex;align-items:center;gap:8px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:600;letter-spacing:.06em;padding:2px 8px;border-radius:999px;background:#E5E7EB;color:#374151">DEMO DATA</span>Values that trigger each state</summary>
+        <ul style="margin:10px 0 2px;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:13px;line-height:20px;color:#4B5563">
+          <li>Branch codes <b style="font-family:'JetBrains Mono',ui-monospace,monospace">1234</b>, <b style="font-family:'JetBrains Mono',ui-monospace,monospace">5678</b>, <b style="font-family:'JetBrains Mono',ui-monospace,monospace">2468</b> are found. <b style="font-family:'JetBrains Mono',ui-monospace,monospace">0000</b> shows a network error (Retry succeeds). Any other code is not found.</li>
+          <li>Verification code: <b style="font-family:'JetBrains Mono',ui-monospace,monospace">123456</b>.</li>
+          <li><span style="font-family:'JetBrains Mono',ui-monospace,monospace">wipawan.srisuk@lotustelecom.example</span> triggers the duplicate-request state. An email outside the dealer's domain (e.g. example.com) shows the domain warning.</li>
+        </ul>
+      </details>
+    </div>
+    <sc-if value="{{ vDesk }}" hint-placeholder-val="{{ true }}">
+      <div style="border:1px solid #E5E7EB;border-radius:16px;overflow:hidden">
+        <dc-import name="RequestForm2" hint-size="100%,740px"></dc-import>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6B7280">Narrow the window below 900px to see the split layout collapse into the compact top bar.</p>
+    </sc-if>
+    <sc-if value="{{ vMob }}">
+      <div style="display:flex;justify-content:center;padding:32px 16px;background:#F3F4F8;border:1px solid #E5E7EB;border-radius:16px;overflow-x:auto">
+        <div style="flex:none;width:391px;height:776px;border:8px solid #0F1220;border-radius:44px;overflow:hidden;background:#FFFFFF;box-shadow:0 20px 50px rgba(15,18,32,.16)">
+          <dc-import name="RequestForm2" layout="mobile" style="width:375px;height:760px;display:block" hint-size="375px,760px"></dc-import>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+</sc-if>
+
+<sc-if value="{{ tScreens }}">
+  <section style="display:flex;flex-direction:column;gap:48px">
+    <p style="margin:0;font-size:14px;color:#6B7280">Desktop artboards at 62%, mobile (375px) at 62%. Every artboard is live, so you can still interact with each state.</p>
+    <sc-for list="{{ screenRows }}" as="row" hint-placeholder-count="3">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:#6D3FE0">{{ row.no }}</span><h2 style="margin:0;font-size:20px;font-weight:700;color:#0F1220">{{ row.title }}</h2><span style="font-size:14px;color:#6B7280">{{ row.note }}</span></div>
+        <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+          <sc-for list="{{ row.items }}" as="it" hint-placeholder-count="2">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">{{ it.cap }}</span>
+              <sc-if value="{{ it.desk }}">
+                <div style="zoom:0.62;width:1088px;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden"><dc-import name="RequestForm2" layout="desktop" init-step="{{ it.step }}" init-lookup="{{ it.lookup }}" init-code="{{ it.code }}" prefill="{{ it.prefill }}" scenario="{{ it.sc }}" style="width:1088px;display:block" hint-size="1088px,736px"></dc-import></div>
+              </sc-if>
+              <sc-if value="{{ it.mob }}">
+                <div style="zoom:0.62;width:391px;height:776px;border:8px solid #0F1220;border-radius:44px;overflow:hidden;background:#FFFFFF"><dc-import name="RequestForm2" layout="mobile" init-step="{{ it.step }}" init-lookup="{{ it.lookup }}" init-code="{{ it.code }}" prefill="{{ it.prefill }}" scenario="{{ it.sc }}" style="width:375px;height:760px;display:block" hint-size="375px,760px"></dc-import></div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </section>
+</sc-if>
+
+<sc-if value="{{ tComp }}">
+  <section style="display:flex;flex-direction:column;gap:24px">
+    <div style="border:1px solid #E5E7EB;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;flex-direction:column;gap:4px"><h2 style="margin:0;font-size:18px;font-weight:700;color:#0F1220">Floating-label input</h2><p style="margin:0;font-size:14px;color:#6B7280">Label stays on the border in every state. The example placeholder stays visible on focus (#6B7280, 4.8:1). Error, warning, and success use an icon and text, not just color.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:32px 24px">
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">default</span><dc-import name="FloatField2" label="First name" required="{{ true }}" icon="user" placeholder="e.g. Somchai" hint-size="100%,56px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">focus</span><dc-import name="FloatField2" label="Branch code" required="{{ true }}" icon="search" mono="{{ true }}" force-focus="{{ true }}" placeholder="e.g. 1234" helper="Use the DMS Code you use to sign in to the dealer portal." hint-size="100%,78px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">filled</span><dc-import name="FloatField2" label="Last name" required="{{ true }}" value="Jaidee" placeholder="e.g. Jaidee" hint-size="100%,56px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">error</span><dc-import name="FloatField2" label="Email address" required="{{ true }}" icon="mail" value="somchai@lotus" error="Enter a valid email address, e.g. name@company.com." hint-size="100%,78px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">warning</span><dc-import name="FloatField2" label="Email address" required="{{ true }}" icon="mail" value="somchai.jaidee@example.com" warning="This email isn't on lotustelecom.example, your dealer's domain. Approval may take longer." hint-size="100%,96px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">success</span><dc-import name="FloatField2" label="Email address" required="{{ true }}" icon="mail" value="somchai.jaidee@lotustelecom.example" success="{{ true }}" helper="We'll send the OpenChat invite link to this address. Use an email you check daily." hint-size="100%,96px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">loading</span><dc-import name="FloatField2" label="Branch code" required="{{ true }}" icon="search" mono="{{ true }}" value="1234" loading="{{ true }}" loading-text="Verifying…" hint-size="100%,78px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">locked</span><dc-import name="FloatField2" label="Dealer name" value="Lotus T…" locked="{{ true }}" hint-size="100%,78px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">disabled</span><dc-import name="FloatField2" label="Branch name" disabled="{{ true }}" placeholder="Shown after verification" helper="Available once your branch code is verified." hint-size="100%,78px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">verification code</span><dc-import name="FloatField2" label="Verification code" required="{{ true }}" icon="key" mono="{{ true }}" wide="{{ true }}" placeholder="e.g. 123456" helper="The code expires in 10 minutes." hint-size="100%,78px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">select</span><dc-import name="FloatField2" label="Role" required="{{ true }}" placeholder="Select your role" options="{{ roleOptions }}" hint-size="100%,56px"></dc-import></div>
+        <div style="display:flex;flex-direction:column;gap:12px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">select · focus</span><dc-import name="FloatField2" label="Role" required="{{ true }}" force-focus="{{ true }}" value="Branch coordinator" options="{{ roleOptions }}" hint-size="100%,56px"></dc-import></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px">
+      <div style="border:1px solid #E5E7EB;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:20px">
+        <h2 style="margin:0;font-size:18px;font-weight:700;color:#0F1220">Checkbox</h2>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;border:1px solid #E5E7EB;border-radius:12px"><span style="width:24px;height:24px;border-radius:6px;border:1.5px solid #6B7280;background:#FFFFFF;flex:none"></span><span style="font-size:16px">Unchecked</span><span style="margin-left:auto;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">default</span></div>
+          <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;border:1px solid #C4B5FD;background:#F5F3FF;border-radius:12px"><span style="width:24px;height:24px;border-radius:6px;background:#6D3FE0;flex:none;display:flex;align-items:center;justify-content:center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span><span style="font-size:16px">Checked</span><span style="margin-left:auto;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">checked</span></div>
+          <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;border:1px solid #E5E7EB;border-radius:12px"><span style="width:24px;height:24px;border-radius:6px;border:1.5px solid #6D3FE0;background:#FFFFFF;flex:none;box-shadow:0 0 0 2px rgba(109,63,224,.3)"></span><span style="font-size:16px">Keyboard focus</span><span style="margin-left:auto;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">focus</span></div>
+        </div>
+        <p style="margin:0;font-size:13px;color:#6B7280">24px box. The whole row is clickable (at least 48px tall).</p>
+      </div>
+
+      <div style="border:1px solid #E5E7EB;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:20px">
+        <h2 style="margin:0;font-size:18px;font-weight:700;color:#0F1220">Signature pad</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">draw · empty</span>
+            <fieldset style="margin:0;padding:0 8px 8px;border:1.5px dashed #B8BEC9;border-radius:12px;background:#FAFAFB;min-width:0"><legend style="padding:0 6px;margin-left:6px;font-size:13px;font-weight:500;color:#374151">Signature<span style="color:#DC3E3E;margin-left:2px">*</span></legend><div style="height:96px;display:flex;align-items:center;justify-content:center;color:#6B7280;font-size:14px">Sign here</div></fieldset>
+            <span style="font-size:13px;color:#6B7280">Sign inside the box using your finger or mouse.</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">draw · error</span>
+            <fieldset style="margin:0;padding:0 8px 8px;border:1.5px dashed #DC3E3E;border-radius:12px;background:#FAFAFB;min-width:0"><legend style="padding:0 6px;margin-left:6px;font-size:13px;font-weight:500;color:#DC3E3E">Signature<span style="margin-left:2px">*</span></legend><div style="height:96px"></div></fieldset>
+            <span style="font-size:13px;color:#DC3E3E"><b>Error:</b> signature too short. Sign again using more of the box.</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">typed fallback</span>
+            <div style="height:112px;border:1.5px dashed #B8BEC9;border-radius:12px;background:#FAFAFB;display:flex;align-items:center;justify-content:center;font-size:24px;font-style:italic;font-weight:500;color:#0F1220">Somchai Jaidee</div>
+            <span style="font-size:13px;color:#6B7280">Type your full name. It counts as your signature for this request.</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="white-space:nowrap;display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:10px;border:1px solid #E5E7EB;font-size:14px;font-weight:600;color:#374151">Clear</span><span style="white-space:nowrap;font-size:15px;font-weight:600;color:#6D3FE0">Type your name instead</span></div>
+      </div>
+
+      <div style="border:1px solid #E5E7EB;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:20px">
+        <h2 style="margin:0;font-size:18px;font-weight:700;color:#0F1220">Stepper</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;align-items:start">
+          <div style="background:#F7F8FA;border-radius:12px;padding:20px;display:flex;flex-direction:column">
+            <div style="display:flex;gap:14px"><div style="display:flex;flex-direction:column;align-items:center;width:28px"><div style="width:28px;height:28px;border-radius:999px;background:#DCF5E7;color:#2E7D5B;display:flex;align-items:center;justify-content:center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></div><div style="width:2px;height:28px;background:#6D3FE0;margin:6px 0"></div></div><div style="padding-top:3px"><div style="font-size:15px;font-weight:500">Branch code</div><div style="font-size:12px;color:#6B7280">done</div></div></div>
+            <div style="display:flex;gap:14px"><div style="display:flex;flex-direction:column;align-items:center;width:28px"><div style="width:28px;height:28px;border-radius:999px;border:1.5px solid #6D3FE0;background:#FFFFFF;color:#6D3FE0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">2</div><div style="width:2px;height:28px;background:#E5E7EB;margin:6px 0"></div></div><div style="padding-top:3px"><div style="font-size:15px;font-weight:700;color:#6D3FE0">Your details</div><div style="font-size:12px;color:#6B7280">current</div></div></div>
+            <div style="display:flex;gap:14px"><div style="width:28px;height:28px;border-radius:999px;border:1.5px solid #E5E7EB;background:#F3F4F6;color:#6B7280;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none">3</div><div style="padding-top:3px"><div style="font-size:15px;font-weight:500;color:#4B5563">Consent &amp; signature</div><div style="font-size:12px;color:#6B7280">upcoming</div></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid #E5E7EB;border-radius:12px">
+            <span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">compact · below 900px</span>
+            <div style="display:flex;justify-content:space-between;gap:8px;font-size:13px"><span style="color:#6B7280;white-space:nowrap">Step 2 of 3</span><span style="font-weight:600">Your details</span></div>
+            <div style="height:4px;border-radius:999px;background:#EDE9FE"><div style="width:67%;height:100%;border-radius:999px;background:#6D3FE0"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #E5E7EB;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:20px">
+        <h2 style="margin:0;font-size:18px;font-weight:700;color:#0F1220">Buttons</h2>
+        <div style="display:flex;flex-wrap:wrap;gap:20px 16px;align-items:flex-end">
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">primary</span><button type="button" style="white-space:nowrap;min-width:140px;min-height:48px;padding:0 24px;border-radius:10px;border:0;background:#6D3FE0;color:#FFFFFF;font-family:inherit;font-size:16px;font-weight:600;box-shadow:0 1px 2px rgba(15,18,32,.08),0 4px 12px rgba(109,63,224,.22);cursor:pointer" style-hover="background:#5B2FCB">Verify branch code</button></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">secondary</span><button type="button" style="white-space:nowrap;min-width:112px;min-height:48px;padding:0 24px;border-radius:10px;border:1px solid #6D3FE0;background:#FFFFFF;color:#6D3FE0;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer" style-hover="background:#F5F3FF">Back</button></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">disabled</span><button type="button" disabled="{{ true }}" style="white-space:nowrap;min-width:140px;min-height:48px;padding:0 24px;border-radius:10px;border:0;background:#E5E7EB;color:#6B7280;font-family:inherit;font-size:16px;font-weight:600">Submit request</button></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">focus</span><button type="button" style="white-space:nowrap;min-width:140px;min-height:48px;padding:0 24px;border-radius:10px;border:0;background:#6D3FE0;color:#FFFFFF;font-family:inherit;font-size:16px;font-weight:600;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px rgba(109,63,224,.3)">Next</button></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">destructive</span><button type="button" style="white-space:nowrap;min-width:112px;min-height:48px;padding:0 24px;border-radius:10px;border:1px solid #DC3E3E;background:#FFFFFF;color:#C53030;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer" style-hover="background:#FEF2F2">Reject</button></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-width:375px"><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#6B7280">mobile sticky bar · 48px · nowrap</span>
+          <div style="display:flex;gap:12px;padding:12px 16px;border:1px solid #E5E7EB;border-radius:12px"><span style="flex:1;white-space:nowrap;min-height:48px;border-radius:10px;border:1px solid #6D3FE0;color:#6D3FE0;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center">Back</span><span style="flex:2;white-space:nowrap;min-height:48px;border-radius:10px;background:#6D3FE0;color:#FFFFFF;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center">Submit request</span></div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #E5E7EB;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:18px">
+        <h2 style="margin:0;font-size:18px;font-weight:700;color:#0F1220">Badges &amp; status</h2>
+        <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#6B7280">Semantic</span>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span style="font-size:13px;font-weight:600;padding:4px 12px;border-radius:999px;background:#DBE6FF;color:#2F5BE0">Info</span>
+            <span style="font-size:13px;font-weight:600;padding:4px 12px;border-radius:999px;background:#DCF5E7;color:#1F5C42">Success</span>
+            <span style="font-size:13px;font-weight:600;padding:4px 12px;border-radius:999px;background:#FEF3C7;color:#92400E">Warning</span>
+            <span style="font-size:13px;font-weight:600;padding:4px 12px;border-radius:999px;background:#FEE2E2;color:#B42323">Danger</span>
+            <span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;padding:4px 12px;border-radius:999px;background:#F3F4F6;border:1px solid #E5E7EB;color:#111827">#REQ-0013</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#6B7280">Request status (icon + text, never color alone)</span>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:#FEF3C7;color:#92400E"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Pending review</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:#DCF5E7;color:#1F5C42"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>Approved</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:#DBE6FF;color:#2F5BE0"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10 14"></path><path d="M21 3 14.5 21 10 14 3 9.5z"></path></svg>Invite sent</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:#FEE2E2;color:#B42323"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>Rejected</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:#6B7280">SLA &amp; invite expiry</span>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span style="white-space:nowrap;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:#F3F4F6;color:#374151">Waiting 5 h</span>
+            <span style="white-space:nowrap;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:#FEF3C7;color:#92400E">Waiting 2 days</span>
+            <span style="white-space:nowrap;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:#FEE2E2;color:#B42323">Waiting 5 days · overdue</span>
+            <span style="white-space:nowrap;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:#DBE6FF;color:#2F5BE0">Link expires in 4 days</span>
+            <span style="white-space:nowrap;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:#FEE2E2;color:#B42323">Link expired</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:#DCF5E7;color:#1F5C42"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>Verified</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="border:1px solid #E5E7EB;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:12px">
+        <h2 style="margin:0 0 4px;font-size:18px;font-weight:700;color:#0F1220">Info, warning &amp; system banners</h2>
+        <div style="display:flex;gap:12px;padding:12px 16px;border-radius:12px;background:#EDE9FE;flex-wrap:wrap"><span style="font-size:15px;font-weight:700;color:#4C1D95">Note</span><span style="font-size:15px;color:#2E1065">Short guidance, two lines max.</span></div>
+        <div style="display:flex;gap:12px;padding:12px 16px;border-radius:12px;background:#DCF5E7;flex-wrap:wrap"><span style="font-size:15px;font-weight:700;color:#1F5C42">Branch found</span><span style="font-size:15px;color:#0F1220">Lotus… / LOTUS…</span></div>
+        <div style="display:flex;gap:12px;padding:12px 16px;border-radius:12px;background:#FFFBEB;border:1px solid #FCE3A6;flex-wrap:wrap"><span style="font-size:15px;font-weight:700;color:#B45309">Terms</span><span style="font-size:15px;color:#111827">3 bullets + Privacy Policy link</span></div>
+        <div style="display:flex;gap:12px;padding:12px 16px;border-radius:12px;background:#FEE2E2;flex-wrap:wrap"><span style="font-size:15px;font-weight:700;color:#111827">A request for this email is already pending</span></div>
+        <div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:12px;background:#FEE2E2;flex-wrap:wrap"><span style="flex:1;min-width:180px;font-size:15px;color:#111827"><b>Connection problem.</b> We couldn't reach the server.</span><span style="white-space:nowrap;min-height:40px;padding:0 16px;border-radius:10px;border:1px solid #DC3E3E;background:#FFFFFF;color:#B42323;font-size:15px;font-weight:600;display:inline-flex;align-items:center">Retry</span></div>
+        <div style="display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:12px;background:#DBE6FF;flex-wrap:wrap"><span style="flex:1;min-width:180px;font-size:15px;color:#111827"><b>Your session expired.</b> We saved your draft.</span><span style="white-space:nowrap;min-height:40px;padding:0 16px;border-radius:10px;background:#2F5BE0;color:#FFFFFF;font-size:15px;font-weight:600;display:inline-flex;align-items:center">Resume</span></div>
+      </div>
+    </div>
+  </section>
+</sc-if>
+
+<sc-if value="{{ tRat }}">
+  <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:32px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:10px;max-width:460px">
+      <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#0F1220">Design principles</h2>
+      <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#6B7280">Numbered pins on the screens show where each principle applies.</p>
+      <sc-for list="{{ principles }}" as="pr" hint-placeholder-count="11">
+        <div style="display:flex;gap:14px;padding:14px 16px;border:1px solid {{ pr.bd }};background:{{ pr.bg }};border-radius:12px">
+          <span style="width:26px;height:26px;border-radius:999px;background:#0F1220;color:#FFFFFF;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">{{ pr.n }}</span>
+          <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:15px;font-weight:700">{{ pr.t }}</span><sc-if value="{{ pr.isNew }}"><span style="font-size:11px;font-weight:700;letter-spacing:.04em;padding:1px 7px;border-radius:999px;background:#6D3FE0;color:#FFFFFF">NEW</span></sc-if></div>
+            <div style="font-size:14px;line-height:21px;color:#4B5563;text-wrap:pretty">{{ pr.d }}</div>
+            <div style="font-size:13px;font-weight:600;color:#6D3FE0">{{ pr.where }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:32px;grid-column:span 2;min-width:0">
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:600;color:#374151">Page 1 · Branch found (masked) · principles 2, 3, 4, 5, 10</span><div style="overflow-x:auto"><div style="zoom:0.6;width:1088px;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden"><dc-import name="RequestForm2" layout="desktop" init-step="1" init-lookup="found" pins="{{ true }}" style="width:1088px;display:block" hint-size="1088px,800px"></dc-import></div></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:600;color:#374151">Page 2 · Inline errors · principles 1, 3, 4, 6</span><div style="overflow-x:auto"><div style="zoom:0.6;width:1088px;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden"><dc-import name="RequestForm2" layout="desktop" scenario="errors" pins="{{ true }}" style="width:1088px;display:block" hint-size="1088px,840px"></dc-import></div></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:600;color:#374151">Page 2 · Verify your email · principle 9</span><div style="overflow-x:auto"><div style="zoom:0.6;width:1088px;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden"><dc-import name="RequestForm2" layout="desktop" scenario="verify-sent" prefill="filled" pins="{{ true }}" style="width:1088px;display:block" hint-size="1088px,736px"></dc-import></div></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:600;color:#374151">Page 3 · Consent · principles 5, 7, 8</span><div style="overflow-x:auto"><div style="zoom:0.6;width:1088px;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden"><dc-import name="RequestForm2" layout="desktop" init-step="3" prefill="filled" pins="{{ true }}" style="width:1088px;display:block" hint-size="1088px,1160px"></dc-import></div></div></div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:600;color:#374151">Mobile · Page 2 · principles 1, 2, 7</span><div style="zoom:0.7;width:391px;height:776px;border:8px solid #0F1220;border-radius:44px;overflow:hidden;background:#FFFFFF"><dc-import name="RequestForm2" layout="mobile" init-step="2" prefill="filled" pins="{{ true }}" style="width:375px;height:760px;display:block" hint-size="375px,760px"></dc-import></div></div>
+        <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:600;color:#374151">Admin · Activity tab · principle 11</span>
+            <div style="position:relative;border:1px solid #E5E7EB;border-radius:12px;padding:8px 18px">
+              <span aria-hidden="true" style="position:absolute;top:-11px;right:-11px;width:24px;height:24px;border-radius:999px;background:#0F1220;color:#FFFFFF;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #FFFFFF">11</span>
+              <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:12px 0;border-bottom:1px solid #F1F2F4;font-size:14px"><span style="font-weight:600">Napat K.</span><span style="color:#6B7280;text-align:right">01 Oct 2026 21:04</span><span style="grid-column:1 / -1;color:#374151">Approved · room Lotus Telecom · Bangkok East · invite sent</span></div>
+              <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:12px 0;border-bottom:1px solid #F1F2F4;font-size:14px"><span style="font-weight:600">System</span><span style="color:#6B7280;text-align:right">01 Oct 2026 20:22</span><span style="grid-column:1 / -1;color:#374151">Email verified with one-time code</span></div>
+              <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:12px 0;font-size:14px"><span style="font-weight:600">Somchai Jaidee</span><span style="color:#6B7280;text-align:right">01 Oct 2026 20:24</span><span style="grid-column:1 / -1;color:#374151">Accepted terms v1.0 and signed (drawn)</span></div>
+            </div>
+          </div>
+          <div style="position:relative;display:flex;flex-direction:column;gap:6px;border:1px solid #E5E7EB;border-radius:12px;padding:16px 18px">
+            <span aria-hidden="true" style="position:absolute;top:-11px;right:-11px;width:24px;height:24px;border-radius:999px;background:#0F1220;color:#FFFFFF;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #FFFFFF">10</span>
+            <span style="font-size:14px;font-weight:700;color:#0F1220">Branch lookup protection (spec)</span>
+            <ul style="margin:0;padding-left:18px;font-size:14px;line-height:22px;color:#374151;display:flex;flex-direction:column;gap:2px">
+              <li>5 lookups per 10 minutes per device and IP. After that, the user waits 10 minutes or completes a CAPTCHA.</li>
+              <li>Unknown and blocked codes return the same generic message, so codes can't be enumerated.</li>
+              <li>Preview shows only the first 5 characters of the dealer and branch names.</li>
+              <li>Full names are shown only to authenticated agents in Admin.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</sc-if>
+
+<sc-if value="{{ tAdmin }}">
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <p style="margin:0;font-size:14px;color:#6B7280">Agent view. Open a request, check the details, then approve (choose a room, preview the email, send) or reject with a reason.</p>
+    <div style="position:relative;display:flex;height:780px;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden;background:#F7F8FA">
+      <aside aria-label="Main navigation" style="width:80px;flex:none;background:#0F1220;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 0">
+        <div aria-hidden="true" style="width:40px;height:40px;border-radius:10px;background:#6D3FE0;display:flex;align-items:center;justify-content:center;margin-bottom:14px"><div style="width:14px;height:14px;border-radius:4px;background:#FFFFFF"></div></div>
+        <a href="#" title="Home" aria-label="Home" style="width:64px;min-height:52px;border-radius:10px;color:#9CA3AF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;font-size:11px;font-weight:500" style-hover="background:#1E2235;color:#FFFFFF"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20H4z"></path><path d="M10 20v-5h4v5"></path></svg><span>Home</span></a>
+        <a href="#" title="Access requests" aria-label="Access requests" aria-current="page" style="width:64px;min-height:52px;border-radius:10px;background:#6D3FE0;color:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;font-size:11px;font-weight:600"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13h4l2 3h4l2-3h4"></path><path d="M5.5 5h13L20 13v6H4v-6z"></path></svg><span>Requests</span></a>
+        <a href="#" title="Rooms" aria-label="Rooms" style="width:64px;min-height:52px;border-radius:10px;color:#9CA3AF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;font-size:11px;font-weight:500" style-hover="background:#1E2235;color:#FFFFFF"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"></path></svg><span>Rooms</span></a>
+        <a href="#" title="Branches" aria-label="Branches" style="width:64px;min-height:52px;border-radius:10px;color:#9CA3AF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;font-size:11px;font-weight:500" style-hover="background:#1E2235;color:#FFFFFF"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"></path><path d="M9 20v-6h6v6"></path></svg><span>Branches</span></a>
+        <a href="#" title="Reports" aria-label="Reports" style="width:64px;min-height:52px;border-radius:10px;color:#9CA3AF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;font-size:11px;font-weight:500" style-hover="background:#1E2235;color:#FFFFFF"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V11M12 20V5M19 20v-7"></path></svg><span>Reports</span></a>
+        <a href="#" title="Settings" aria-label="Settings" style="width:64px;min-height:52px;border-radius:10px;color:#9CA3AF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;font-size:11px;font-weight:500" style-hover="background:#1E2235;color:#FFFFFF"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"></path></svg><span>Settings</span></a>
+        <div title="Napat K. (Agent)" style="margin-top:auto;width:36px;height:36px;border-radius:999px;background:#2E7D5B;color:#FFFFFF;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">NK</div>
+      </aside>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="background:#FFFFFF;border-bottom:1px solid #E5E7EB;padding:12px 20px;display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+            <span style="font-size:12px;color:#6B7280;white-space:nowrap">Line OpenChat</span>
+            <h1 style="margin:0;font-size:18px;font-weight:700;color:#0F1220;white-space:nowrap">Access requests</h1>
+          </div>
+          <label style="flex:1 1 260px;min-width:220px;max-width:520px;display:flex;align-items:center;gap:10px;height:42px;padding:0 14px;border:1px solid #D1D5DB;border-radius:10px;background:#FFFFFF;color:#6B7280">
+            <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="flex:none"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            <input aria-label="Search requests" value="{{ q }}" onChange="{{ setQ }}" placeholder="Search name, email, branch, or request ID" style="flex:1;min-width:0;border:0;outline:0;font-family:inherit;font-size:15px;color:#111827;background:transparent;text-overflow:ellipsis">
+          </label>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+            <button type="button" onClick="{{ exportAll }}" style="white-space:nowrap;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border-radius:10px;border:1px solid #D1D5DB;background:#FFFFFF;color:#111827;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#F9FAFB" style-focus="outline:none;box-shadow:0 0 0 2px rgba(109,63,224,.3)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5"></path><path d="M4 19h16"></path></svg>Export CSV</button>
+            <span title="Notifications" aria-label="Notifications" style="position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#374151"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 21h4"></path></svg><span style="position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:999px;background:#DC3E3E;border:2px solid #FFFFFF"></span></span>
+          </div>
+        </div>
+        <div style="background:#FFFFFF;border-bottom:1px solid #E5E7EB;padding:8px 20px;display:flex;align-items:center;gap:6px">
+          <span style="flex:none;font-size:12px;font-weight:600;color:#6B7280;letter-spacing:.04em;margin-right:4px">STATUS</span>
+          <div role="group" aria-label="Filter by status" style="flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;padding:2px">
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+              <button type="button" onClick="{{ f.pick }}" aria-pressed="{{ f.on }}" style="flex:none;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:8px;border:0;background:{{ f.bg }};color:{{ f.fg }};font-family:inherit;font-size:14px;font-weight:600;cursor:pointer" style-focus="outline:none;box-shadow:0 0 0 2px rgba(109,63,224,.3)">{{ f.t }}<span style="font-size:12px;padding:1px 7px;border-radius:999px;background:{{ f.cbg }}">{{ f.count }}</span></button>
+            </sc-for>
+          </div>
+          <span style="flex:none;font-size:13px;color:#6B7280;white-space:nowrap">{{ countText }}</span>
+        </div>
+        <sc-if value="{{ hasBulk }}">
+          <div role="toolbar" aria-label="Bulk actions" style="background:#F5F3FF;border-bottom:1px solid #DDD6FE;padding:8px 20px;display:flex;align-items:center;gap:8px;overflow-x:auto">
+            <span style="flex:none;font-size:14px;font-weight:700;color:#4C1D95;white-space:nowrap;margin-right:6px">{{ selCount }} selected</span>
+            <button type="button" onClick="{{ bulkApprove }}" style="flex:none;white-space:nowrap;min-height:36px;padding:0 12px;border-radius:8px;border:0;background:#6D3FE0;color:#FFFFFF;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Approve &amp; send invites</button>
+            <button type="button" onClick="{{ bulkReject }}" style="flex:none;white-space:nowrap;min-height:36px;padding:0 12px;border-radius:8px;border:1px solid #DC3E3E;background:#FFFFFF;color:#C53030;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Reject…</button>
+            <button type="button" onClick="{{ exportSel }}" style="flex:none;white-space:nowrap;min-height:36px;padding:0 12px;border-radius:8px;border:1px solid #D1D5DB;background:#FFFFFF;color:#111827;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Export selected</button>
+            <button type="button" onClick="{{ clearSel }}" style="flex:none;white-space:nowrap;min-height:36px;padding:0 12px;border-radius:8px;border:0;background:transparent;color:#4C1D95;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Clear</button>
+            <span style="flex:none;font-size:12px;color:#5B21B6;white-space:nowrap">Bulk approve uses each request's mapped room.</span>
+          </div>
+        </sc-if>
+        <div style="flex:1;overflow:auto;padding:16px 20px">
+          <div role="table" aria-label="Access requests" style="min-width:960px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden">
+            <div role="row" style="display:grid;grid-template-columns:44px 112px minmax(260px,1.6fr) minmax(200px,1.2fr) 176px 156px;gap:12px;align-items:center;padding:10px 16px;background:#F7F8FA;border-bottom:1px solid #E5E7EB;font-size:12px;font-weight:600;color:#4B5563;letter-spacing:.03em">
+              <span role="columnheader" style="display:flex;align-items:center;justify-content:center"><input type="checkbox" aria-label="Select all visible requests" checked="{{ allSel }}" onChange="{{ toggleAll }}" style="width:18px;height:18px;margin:0;accent-color:#6D3FE0;cursor:pointer"></span>
+              <span role="columnheader">REQUEST ID</span><span role="columnheader">REQUESTER</span><span role="columnheader">DEALER / BRANCH</span><span role="columnheader">SUBMITTED</span><span role="columnheader">STATUS</span>
+            </div>
+            <sc-for list="{{ aRows }}" as="r" hint-placeholder-count="6">
+              <div role="row" tabIndex="0" aria-selected="{{ r.ariaSel }}" onClick="{{ r.open }}" onKeyDown="{{ r.key }}" style="display:grid;grid-template-columns:44px 112px minmax(260px,1.6fr) minmax(200px,1.2fr) 176px 156px;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid #F1F2F4;background:{{ r.rowBg }};cursor:pointer;outline:none" style-hover="background:#F9F8FF" style-focus="box-shadow:inset 0 0 0 2px rgba(109,63,224,.35)">
+                <span role="cell" onClick="{{ r.stop }}" style="display:flex;align-items:center;justify-content:center;min-height:36px"><input type="checkbox" aria-label="{{ r.selLabel }}" checked="{{ r.checked }}" onChange="{{ r.toggleSel }}" style="width:18px;height:18px;margin:0;accent-color:#6D3FE0;cursor:pointer"></span>
+                <span role="cell" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:#4B5563;white-space:nowrap">#{{ r.id }}</span>
+                <span role="cell" style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-size:15px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+                  <span title="{{ r.email }}" style="font-size:13px;color:#4B5563;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.email }}</span>
+                </span>
+                <span role="cell" style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-size:14px;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.dealer }}</span>
+                  <span title="{{ r.branch }}" style="font-size:13px;color:#4B5563;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.branch }} · {{ r.code }}</span>
+                </span>
+                <span role="cell" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0">
+                  <span style="font-size:13px;color:#374151;white-space:nowrap">{{ r.dateText }}</span>
+                  <sc-if value="{{ r.hasSla }}"><span style="white-space:nowrap;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:{{ r.slaBg }};color:{{ r.slaFg }}">{{ r.sla }}</span></sc-if>
+                </span>
+                <span role="cell" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:{{ r.sbg }};color:{{ r.sfg }}">
+                    <sc-if value="{{ r.isP }}"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></sc-if>
+                    <sc-if value="{{ r.isA }}"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></sc-if>
+                    <sc-if value="{{ r.isS }}"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10 14"></path><path d="M21 3 14.5 21 10 14 3 9.5z"></path></svg></sc-if>
+                    <sc-if value="{{ r.isR }}"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></sc-if>
+                    <span>{{ r.st }}</span>
+                  </span>
+                  <sc-if value="{{ r.hasExp }}"><span style="white-space:nowrap;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:{{ r.expBg }};color:{{ r.expFg }}">{{ r.exp }}</span></sc-if>
+                </span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ aEmpty }}"><div style="padding:48px 20px;text-align:center;font-size:15px;color:#6B7280">No requests match this filter.</div></sc-if>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ hasToast }}">
+        <div role="status" aria-live="polite" style="position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:40;display:flex;align-items:center;gap:10px;max-width:calc(100% - 48px);padding:12px 16px;border-radius:12px;background:#0F1220;color:#FFFFFF;font-size:14px;font-weight:500;box-shadow:0 12px 32px rgba(15,18,32,.25)">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>
+          <span style="overflow:hidden;text-overflow:ellipsis">{{ toast }}</span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasRjBulk }}">
+        <div style="position:absolute;inset:0;z-index:30;background:rgba(15,18,32,.32);display:flex;align-items:center;justify-content:center;padding:24px">
+          <div role="dialog" aria-label="Reject requests" style="width:100%;max-width:480px;background:#FFFFFF;border-radius:16px;box-shadow:0 24px 60px rgba(15,18,32,.25);display:flex;flex-direction:column;max-height:100%;overflow:auto">
+            <div style="padding:20px 24px 4px;display:flex;flex-direction:column;gap:4px"><span style="font-size:18px;font-weight:700;color:#0F1220">{{ rjTitle }}</span><span style="font-size:14px;color:#6B7280">A reason is required. It's saved to the audit trail and included in the email to the requester.</span></div>
+            <div style="padding:12px 24px;display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ rjReasons }}" as="o" hint-placeholder-count="5">
+                <button type="button" role="radio" aria-checked="{{ o.on }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid {{ o.bd }};background:{{ o.bg }};font-family:inherit;font-size:15px;color:#111827;text-align:left;cursor:pointer"><span style="width:18px;height:18px;border-radius:999px;border:{{ o.dot }};flex:none;box-sizing:border-box"></span>{{ o.t }}</button>
+              </sc-for>
+              <label style="display:flex;flex-direction:column;gap:6px;margin-top:4px"><span style="font-size:13px;font-weight:600;color:#374151">{{ rjNoteLabel }}</span><textarea value="{{ rjNote }}" onChange="{{ setRjNote }}" rows="3" placeholder="e.g. Branch manager confirmed this person left in August." style="resize:vertical;border:1px solid #D1D5DB;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:15px;line-height:22px;color:#111827;outline:none" style-focus="border-color:#6D3FE0;box-shadow:0 0 0 2px rgba(109,63,224,.3)"></textarea></label>
+            </div>
+            <div style="padding:12px 24px 20px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+              <button type="button" onClick="{{ rjClose }}" style="white-space:nowrap;min-height:44px;min-width:96px;padding:0 16px;border-radius:10px;border:1px solid #D1D5DB;background:#FFFFFF;color:#111827;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer">Cancel</button>
+              <sc-if value="{{ rjCan }}"><button type="button" onClick="{{ rjConfirm }}" style="white-space:nowrap;min-height:44px;padding:0 16px;border-radius:10px;border:0;background:#DC3E3E;color:#FFFFFF;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#C53030">{{ rjConfirmLabel }}</button></sc-if>
+              <sc-if value="{{ rjCannot }}"><button type="button" disabled="{{ true }}" style="white-space:nowrap;min-height:44px;padding:0 16px;border-radius:10px;border:0;background:#E5E7EB;color:#6B7280;font-family:inherit;font-size:15px;font-weight:600">{{ rjConfirmLabel }}</button></sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasSel }}">
+        <div role="dialog" aria-label="Request details" style="position:absolute;top:0;right:0;bottom:0;width:min(500px,100%);background:#FFFFFF;border-left:1px solid #E5E7EB;box-shadow:-16px 0 40px rgba(15,18,32,.08);display:flex;flex-direction:column;z-index:20">
+          <div style="padding:16px 24px 0;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px;font-weight:600;color:#4B5563">#{{ d.id }}</span>
+              <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:{{ d.sbg }};color:{{ d.sfg }}">{{ d.st }}</span>
+              <sc-if value="{{ d.hasExp }}"><span style="white-space:nowrap;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:{{ d.expBg }};color:{{ d.expFg }}">{{ d.exp }}</span></sc-if>
+              <sc-if value="{{ d.hasSla }}"><span style="white-space:nowrap;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:{{ d.slaBg }};color:{{ d.slaFg }}">{{ d.sla }}</span></sc-if>
+              <button type="button" aria-label="Close" title="Close" onClick="{{ closeSel }}" style="margin-left:auto;width:40px;height:40px;border-radius:10px;border:0;background:transparent;color:#4B5563;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F3F4F6"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </div>
+            <div style="font-size:21px;font-weight:700;color:#0F1220">{{ d.name }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:13px;color:#6B7280"><span>Access requests</span><span aria-hidden="true">›</span><span>{{ d.dealer }}</span><span aria-hidden="true">›</span><span>{{ d.branch }}</span></div>
+            <div role="tablist" aria-label="Request sections" style="display:flex;gap:20px;border-bottom:1px solid #E5E7EB;margin-top:6px">
+              <button type="button" role="tab" aria-selected="{{ dtDetailsSel }}" onClick="{{ showDetails }}" style="white-space:nowrap;min-height:44px;padding:0 2px;border:0;border-bottom:2px solid {{ dtDetailsBd }};margin-bottom:-1px;background:transparent;color:{{ dtDetailsFg }};font-family:inherit;font-size:15px;font-weight:600;cursor:pointer">Details</button>
+              <button type="button" role="tab" aria-selected="{{ dtActSel }}" onClick="{{ showActivity }}" style="white-space:nowrap;min-height:44px;padding:0 2px;border:0;border-bottom:2px solid {{ dtActBd }};margin-bottom:-1px;background:transparent;color:{{ dtActFg }};font-family:inherit;font-size:15px;font-weight:600;cursor:pointer">Activity <span style="font-size:12px;padding:1px 7px;border-radius:999px;background:#F3F4F6;color:#374151">{{ dLogCount }}</span></button>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;overflow:auto;padding:16px 24px 20px">
+            <sc-if value="{{ dtDetails }}">
+              <div style="display:flex;flex-direction:column;gap:18px">
+                <sc-if value="{{ d.isRejected }}">
+                  <div style="display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:10px;background:#FEE2E2;font-size:14px;line-height:21px"><span style="font-weight:700;color:#111827">Rejected: {{ d.reason }}</span><span style="color:#374151">{{ d.reasonNote }}</span></div>
+                </sc-if>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <h3 style="margin:0;font-size:13px;font-weight:700;letter-spacing:.04em;color:#4B5563">REQUESTER</h3>
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 20px;padding:14px 16px;border-radius:12px;background:#F7F8FA">
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;color:#6B7280">First name</span><span style="font-size:14px;font-weight:600">{{ d.first }}</span></div>
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;color:#6B7280">Last name</span><span style="font-size:14px;font-weight:600">{{ d.last }}</span></div>
+                    <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:12px;color:#6B7280">Email address</span>
+                      <span style="display:flex;align-items:center;gap:8px;min-width:0"><span title="{{ d.email }}" style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ d.email }}</span><span style="flex:none;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:#DCF5E7;color:#1F5C42"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>Verified</span></span>
+                      <sc-if value="{{ d.domainWarn }}"><span style="display:flex;gap:6px;font-size:13px;line-height:18px;color:#92400E"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M12 3 2.5 20h19L12 3Z"></path><path d="M12 10v4.5M12 17.5h.01"></path></svg>Not on the dealer's domain ({{ d.domain }}). Confirm with the branch manager.</span></sc-if>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <h3 style="margin:0;font-size:13px;font-weight:700;letter-spacing:.04em;color:#4B5563">BRANCH</h3>
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 20px;padding:14px 16px;border-radius:12px;background:#F7F8FA">
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;color:#6B7280">Dealer name</span><span style="font-size:14px;font-weight:600">{{ d.dealer }}</span></div>
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;color:#6B7280">Branch code</span><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px;font-weight:600">{{ d.code }}</span></div>
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;color:#6B7280">Branch name</span><span style="font-size:14px;font-weight:600">{{ d.branch }}</span></div>
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;color:#6B7280">Region</span><span style="font-size:14px;font-weight:600">{{ d.region }}</span></div>
+                    <div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:12px;color:#6B7280">{{ d.roomLabel }}</span><span style="font-size:14px;font-weight:600">{{ d.roomName }}</span></div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <h3 style="margin:0;font-size:13px;font-weight:700;letter-spacing:.04em;color:#4B5563">CONSENT &amp; SIGNATURE</h3>
+                  <div style="display:flex;flex-direction:column;gap:12px;padding:14px 16px;border-radius:12px;background:#F7F8FA">
+                    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 20px">
+                      <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">Consent given</span><span style="font-size:14px;font-weight:600">{{ d.dateText }}</span></div>
+                      <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">Terms version</span><span style="font-size:14px;font-weight:600">v1.0 <span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#92400E">[Legal to confirm]</span></span></div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:#6B7280">Signature · {{ d.sigMethod }}</span>
+                      <div role="img" aria-label="{{ d.sigAlt }}" style="height:96px;border:1px solid #E5E7EB;border-radius:10px;background:repeating-linear-gradient(135deg,#FFFFFF 0 10px,#F3F4F6 10px 20px);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;color:#4B5563">signature-{{ d.id }}.png</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ dtActivity }}">
+              <ol aria-label="Audit trail" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column">
+                <sc-for list="{{ dLog }}" as="e" hint-placeholder-count="4">
+                  <li style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #F1F2F4">
+                    <span aria-hidden="true" style="width:32px;height:32px;border-radius:999px;background:{{ e.avBg }};color:{{ e.avFg }};font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">{{ e.ini }}</span>
+                    <div style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1">
+                      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-size:14px;font-weight:700;color:#111827">{{ e.who }}</span><span style="font-size:12px;color:#6B7280">{{ e.role }}</span><span style="margin-left:auto;font-size:12px;color:#6B7280;white-space:nowrap">{{ e.when }}</span></div>
+                      <div style="font-size:14px;line-height:21px;color:#374151;overflow-wrap:anywhere">{{ e.what }}</div>
+                    </div>
+                  </li>
+                </sc-for>
+              </ol>
+            </sc-if>
+          </div>
+          <div style="flex:none;border-top:1px solid #E5E7EB;padding:14px 24px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <sc-if value="{{ d.isPending }}">
+              <button type="button" onClick="{{ openReject }}" style="white-space:nowrap;min-height:44px;min-width:96px;padding:0 16px;border-radius:10px;border:1px solid #DC3E3E;background:#FFFFFF;color:#C53030;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#FEF2F2">Reject</button>
+              <button type="button" onClick="{{ openApprove }}" style="margin-left:auto;white-space:nowrap;min-height:44px;min-width:120px;padding:0 18px;border-radius:10px;border:0;background:#6D3FE0;color:#FFFFFF;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#5B2FCB">Approve</button>
+            </sc-if>
+            <sc-if value="{{ d.isApproved }}">
+              <span style="font-size:13px;color:#4B5563">Approved, invite not sent yet.</span>
+              <button type="button" onClick="{{ openApprove }}" style="margin-left:auto;white-space:nowrap;min-height:44px;min-width:120px;padding:0 18px;border-radius:10px;border:0;background:#6D3FE0;color:#FFFFFF;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#5B2FCB">Send invite</button>
+            </sc-if>
+            <sc-if value="{{ d.isSent }}">
+              <span style="font-size:13px;color:#4B5563;min-width:0">Sent {{ d.sentText }}</span>
+              <button type="button" onClick="{{ openApprove }}" style="margin-left:auto;white-space:nowrap;min-height:44px;min-width:120px;padding:0 16px;border-radius:10px;border:1px solid #6D3FE0;background:#FFFFFF;color:#6D3FE0;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#F5F3FF">Resend invite</button>
+            </sc-if>
+            <sc-if value="{{ d.isRejected }}">
+              <button type="button" onClick="{{ reopen }}" style="margin-left:auto;white-space:nowrap;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid #6D3FE0;background:#FFFFFF;color:#6D3FE0;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#F5F3FF">Reopen request</button>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ apOpen }}">
+            <div role="dialog" aria-label="{{ apTitle }}" style="position:absolute;inset:0;z-index:5;background:#FFFFFF;display:flex;flex-direction:column">
+              <div style="padding:16px 24px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;gap:10px">
+                <button type="button" aria-label="Close" title="Close" onClick="{{ apClose }}" style="width:40px;height:40px;border-radius:10px;border:0;background:transparent;color:#374151;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-hover="background:#F3F4F6"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:17px;font-weight:700;color:#0F1220">{{ apTitle }}</span><span style="font-size:13px;color:#6B7280">{{ apStepText }}</span></div>
+              </div>
+              <div style="flex:1;min-height:0;overflow:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+                <sc-if value="{{ apStep1 }}">
+                  <span style="font-size:14px;color:#4B5563">Rooms are mapped by dealer and region. The recommended room is preselected.</span>
+                  <div role="radiogroup" aria-label="OpenChat room" style="display:flex;flex-direction:column;gap:8px">
+                    <sc-for list="{{ apRooms }}" as="rm" hint-placeholder-count="4">
+                      <button type="button" role="radio" aria-checked="{{ rm.on }}" onClick="{{ rm.pick }}" style="display:flex;align-items:flex-start;gap:12px;padding:14px;border-radius:12px;border:1px solid {{ rm.bd }};background:{{ rm.bg }};font-family:inherit;text-align:left;cursor:pointer">
+                        <span style="width:18px;height:18px;border-radius:999px;border:{{ rm.dot }};flex:none;box-sizing:border-box;margin-top:2px"></span>
+                        <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                          <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:15px;font-weight:600;color:#111827">{{ rm.name }}</span><sc-if value="{{ rm.rec }}"><span style="white-space:nowrap;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:#EDE9FE;color:#5B21B6">Recommended</span></sc-if></span>
+                          <span style="font-size:13px;color:#4B5563">{{ rm.meta }}</span>
+                        </span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ apStep2 }}">
+                  <div style="display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px 12px;font-size:14px;padding-bottom:14px;border-bottom:1px solid #E5E7EB">
+                    <span style="color:#6B7280">To</span><span title="{{ d.email }}" style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.email }}</span>
+                    <span style="color:#6B7280">Subject</span><span style="font-weight:600">Your Line OpenChat invite (#{{ d.id }})</span>
+                    <span style="color:#6B7280">Room</span><span style="font-weight:600">{{ apRoomName }}</span>
+                  </div>
+                  <div style="border:1px solid #E5E7EB;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:24px;color:#111827">
+                    <span>Hi {{ d.first }},</span>
+                    <span>Your request to join the Line OpenChat for {{ d.branch }} has been approved. Use the button below to join <b>{{ apRoomName }}</b>.</span>
+                    <span style="align-self:flex-start;white-space:nowrap;display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:10px;background:#6D3FE0;color:#FFFFFF;font-weight:600">Join Line OpenChat</span>
+                    <span style="font-size:13px;color:#4B5563">This link is personal and expires in 7 days. Please don't forward it. Need help? Reply to this email.</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:13px;font-weight:600;color:#4B5563">Invite link</span><span style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;padding:6px 10px;border-radius:8px;background:#F3F4F6;color:#374151">line.me/ti/g2/••••••••</span><span style="white-space:nowrap;font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:#DBE6FF;color:#2F5BE0">Expires in 7 days</span></div>
+                </sc-if>
+              </div>
+              <div style="border-top:1px solid #E5E7EB;padding:14px 24px 18px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+                <button type="button" onClick="{{ apBack }}" style="white-space:nowrap;min-height:44px;min-width:96px;padding:0 16px;border-radius:10px;border:1px solid #6D3FE0;background:#FFFFFF;color:#6D3FE0;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#F5F3FF">{{ apBackLabel }}</button>
+                <button type="button" onClick="{{ apNext }}" style="white-space:nowrap;min-height:44px;min-width:140px;padding:0 18px;border-radius:10px;border:0;background:#6D3FE0;color:#FFFFFF;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px" style-hover="background:#5B2FCB">{{ apNextLabel }}</button>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </section>
+</sc-if>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  NOW = new Date(2026, 9, 1, 21, 0);
+  D = (m, d, h, mi) => new Date(2026, m - 1, d, h, mi);
+  ROOMS = [
+    { id: 'lotus-bkk', name: 'Lotus Telecom · Bangkok East', meta: '128 members · Dealer Lotus Telecom · Region Bangkok East', dealer: 'Lotus Telecom' },
+    { id: 'harbor-bkk', name: 'Harbor Mobile Group · Bangkok', meta: '86 members · Dealer Harbor Mobile Group · Region Bangkok', dealer: 'Harbor Mobile Group' },
+    { id: 'hub-ne', name: 'Orchid Devices · North & Northeast', meta: '54 members · Dealer Orchid Devices Co. · Region North, Northeast', dealer: 'Orchid Devices Co.' },
+    { id: 'all', name: 'All dealers · Announcements', meta: '1,240 members · Read-only announcements' },
+  ];
+  SEED = [
+    { id: 'REQ-0012', first: 'Somchai', last: 'Jaidee', email: 'somchai.jaidee@lotustelecom.example', dealer: 'Lotus Telecom', branch: 'LOTUS HUB (RIVERSIDE)', code: '1234', region: 'Bangkok East', domain: 'lotustelecom.example', at: [10, 1, 20, 24], status: 'pending', sig: 'drawn' },
+    { id: 'REQ-0011', first: 'Wipawan', last: 'Srisuk', email: 'wipawan.srisuk@lotustelecom.example', dealer: 'Lotus Telecom', branch: 'LOTUS PLUS (MINBURI)', code: '5678', region: 'Bangkok East', domain: 'lotustelecom.example', at: [9, 29, 17, 2], status: 'pending', sig: 'typed' },
+    { id: 'REQ-0010', first: 'Nattaphon', last: 'Kaewmanee', email: 'nattaphon.kaewmanee@harbormobile.example', dealer: 'Harbor Mobile Group', branch: 'HARBOR MALL RAMA 9', code: '2468', region: 'Bangkok', domain: 'harbormobile.example', at: [9, 30, 11, 45], status: 'approved', room: 'harbor-bkk', sig: 'drawn' },
+    { id: 'REQ-0009', first: 'Piyanuch', last: 'Thongdee', email: 'piyanuch.thongdee@harbormobile.example', dealer: 'Harbor Mobile Group', branch: 'EASTERN PLAZA BANGKAPI', code: '2471', region: 'Bangkok', domain: 'harbormobile.example', at: [9, 28, 16, 10], status: 'sent', room: 'harbor-bkk', sent: [9, 28, 18, 5], sig: 'drawn' },
+    { id: 'REQ-0008', first: 'Anucha', last: 'Promma', email: 'anucha.promma.branch-coordinator@lotustelecom.example', dealer: 'Lotus Telecom', branch: 'LOTUS HUB (RIVERSIDE)', code: '1234', region: 'Bangkok East', domain: 'lotustelecom.example', at: [9, 22, 9, 31], status: 'sent', room: 'lotus-bkk', sent: [9, 22, 13, 40], sig: 'drawn' },
+    { id: 'REQ-0007', first: 'Kamonchanok', last: 'Wongyai', email: 'kamonchanok.wongyai@orchiddevices.example', dealer: 'Orchid Devices Co.', branch: 'NORTH PLAZA CHIANG RAI', code: '3302', region: 'North', domain: 'orchiddevices.example', at: [9, 27, 14, 5], status: 'rejected', reason: 'Not listed as branch staff', reasonNote: 'Branch manager confirmed this person is not on the current staff list.', sig: 'drawn' },
+    { id: 'REQ-0006', first: 'Teerawat', last: 'Saiboon', email: 'teerawat.saiboon@example.com', dealer: 'Orchid Devices Co.', branch: 'GRAND PLAZA KHON KAEN', code: '3315', region: 'Northeast', domain: 'orchiddevices.example', at: [9, 26, 10, 22], status: 'pending', sig: 'drawn' },
+  ];
+  SM = { pending: ['Pending review', '#FEF3C7', '#92400E'], approved: ['Approved', '#DCF5E7', '#1F5C42'], sent: ['Invite sent', '#DBE6FF', '#2F5BE0'], rejected: ['Rejected', '#FEE2E2', '#B42323'] };
+  REASONS = ['Not listed as branch staff', "Branch code doesn't match the requester", 'Duplicate request', "Email can't be confirmed", 'Other'];
+  state = {
+    tab: 'proto', view: 'desktop', filter: 'all', q: '', sel: null, picked: {}, extra: {}, dtab: 'details',
+    rows: this.SEED.map(r => ({ ...r, submitted: this.D(...r.at), sentAt: r.sent ? this.D(...r.sent) : null, room: r.room || this.mapRoom(r.dealer) })),
+    ap: null, rj: null, toast: '',
+  };
+  mapRoom(dealer) { const r = this.ROOMS.find(x => x.dealer === dealer); return r ? r.id : 'all'; }
+  roomName(id) { const r = this.ROOMS.find(x => x.id === id); return r ? r.name : ''; }
+  fmt(d) { const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], z = n => String(n).padStart(2, '0'); return z(d.getDate()) + ' ' + M[d.getMonth()] + ' ' + d.getFullYear() + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()); }
+  now() { return this.NOW; }
+  sla(r) {
+    if (r.status !== 'pending' && r.status !== 'approved') return null;
+    const h = (this.NOW - r.submitted) / 36e5;
+    if (h < 24) return ['Waiting ' + Math.max(1, Math.round(h)) + ' h', '#F3F4F6', '#374151'];
+    const d = Math.floor(h / 24);
+    return d >= 3 ? ['Waiting ' + d + ' days · overdue', '#FEE2E2', '#B42323'] : ['Waiting ' + d + (d === 1 ? ' day' : ' days'), '#FEF3C7', '#92400E'];
+  }
+  expiry(r) {
+    if (r.status !== 'sent' || !r.sentAt) return null;
+    const left = Math.ceil((r.sentAt.getTime() + 7 * 864e5 - this.NOW) / 864e5);
+    return left > 0 ? ['Link expires in ' + left + (left === 1 ? ' day' : ' days'), '#DBE6FF', '#2F5BE0'] : ['Link expired', '#FEE2E2', '#B42323'];
+  }
+  baseLog(r) {
+    const name = r.first + ' ' + r.last, t0 = r.submitted;
+    const m = mins => this.fmt(new Date(t0.getTime() + mins * 6e4));
+    const L = [
+      { who: name, role: 'Requester', when: m(-6), what: 'Looked up branch code ' + r.code + ' and started the form' },
+      { who: 'System', role: 'Automation', when: m(-6), what: 'Branch code ' + r.code + ' matched ' + r.dealer + ' – ' + r.branch },
+      { who: 'System', role: 'Automation', when: m(-2), what: 'Email ' + r.email + ' verified with one-time code' },
+      { who: name, role: 'Requester', when: m(0), what: 'Accepted terms v1.0 and signed (' + r.sig + '). Request submitted.' },
+    ];
+    if (r.status === 'approved' || r.status === 'sent') L.push({ who: 'Napat K.', role: 'Agent', when: m(r.status === 'sent' ? 100 : 30), what: 'Approved request · room ' + this.roomName(r.room) });
+    if (r.status === 'sent' && r.sentAt && !r.dyn) L.push({ who: 'Napat K.', role: 'Agent', when: this.fmt(r.sentAt), what: 'Sent invite email to ' + r.email + ' · link valid 7 days' });
+    if (r.status === 'rejected' && !r.dyn) L.push({ who: 'Napat K.', role: 'Agent', when: m(45), what: 'Rejected · ' + r.reason + (r.reasonNote ? ' · "' + r.reasonNote + '"' : '') });
+    return L;
+  }
+  logFor(r) {
+    const all = (r.dyn ? r.baseSnap : this.baseLog(r)).concat(this.state.extra[r.id] || []);
+    return all.map(e => {
+      const sys = e.who === 'System', agent = e.role === 'Agent';
+      return { ...e, ini: sys ? 'SY' : e.who.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(), avBg: sys ? '#F3F4F6' : agent ? '#EDE9FE' : '#DCF5E7', avFg: sys ? '#374151' : agent ? '#5B21B6' : '#1F5C42' };
+    }).reverse();
+  }
+  addLog(ids, what) {
+    this.setState(s => {
+      const extra = { ...s.extra };
+      ids.forEach(id => { const r = s.rows.find(x => x.id === id); extra[id] = [...(extra[id] || []), { who: 'Napat K.', role: 'Agent', when: this.fmt(this.NOW), what: typeof what === 'function' ? what(r) : what }]; });
+      return { extra };
+    });
+  }
+  freeze(s, id) { return s.rows.map(r => r.id === id && !r.dyn ? { ...r, dyn: true, baseSnap: this.baseLog(r) } : r); }
+  update(ids, patch) {
+    this.setState(s => {
+      let rows = s.rows;
+      ids.forEach(id => { rows = rows.map(r => r.id === id ? (r.dyn ? r : { ...r, dyn: true, baseSnap: this.baseLog(r) }) : r); });
+      rows = rows.map(r => ids.includes(r.id) ? { ...r, ...(typeof patch === 'function' ? patch(r) : patch) } : r);
+      return { rows };
+    });
+  }
+  toast(msg) { clearTimeout(this.tt); this.setState({ toast: msg }); this.tt = setTimeout(() => this.setState({ toast: '' }), 3200); }
+  componentWillUnmount() { clearTimeout(this.tt); }
+  csv(rows) {
+    const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
+    const head = ['Request ID', 'First name', 'Last name', 'Email', 'Dealer', 'Branch code', 'Branch name', 'Submitted', 'Status'];
+    const body = rows.map(r => [r.id, r.first, r.last, r.email, r.dealer, r.code, r.branch, this.fmt(r.submitted), this.SM[r.status][0]].map(esc).join(','));
+    const blob = new Blob([[head.map(esc).join(',')].concat(body).join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'access-requests.csv'; document.body.appendChild(a); a.click(); a.remove();
+    this.toast('Exported ' + rows.length + (rows.length === 1 ? ' request' : ' requests') + ' to CSV');
+  }
+  sendInvite(ids, roomOf, resend) {
+    const t = this.NOW, msgs = {};
+    this.state.rows.filter(r => ids.includes(r.id)).forEach(r => { msgs[r.id] = (resend ? 'Resent invite email to ' : r.status === 'pending' ? 'Approved request · room ' + this.roomName(roomOf(r)) + ' · sent invite email to ' : 'Sent invite email to ') + r.email + ' · link valid 7 days'; });
+    this.update(ids, r => ({ status: 'sent', sentAt: t, room: roomOf(r) }));
+    this.addLog(ids, r => msgs[r.id]);
+  }
+  screenRows() {
+    const D = (cap, o) => ({ cap, desk: true, mob: false, step: 1, lookup: '', code: '', prefill: '', sc: '', ...o });
+    const M = (cap, o) => ({ ...D(cap, o), desk: false, mob: true });
+    return [
+      { no: '01', title: 'Page 1 · Enter your branch code', note: 'Default', items: [D('Desktop · default', {}), M('Mobile · default', {})] },
+      { no: '01b', title: 'Page 1 · Lookup states', note: 'Verifying, found (masked), not found, network error', items: [D('Desktop · branch found (masked)', { lookup: 'found' }), M('Mobile · verifying', { lookup: 'loading', code: '1234' }), M('Mobile · not found', { lookup: 'notfound' }), M('Mobile · network error', { sc: 'network' })] },
+      { no: '02', title: 'Page 2 · Your details', note: 'Filled, inline errors, domain warning, duplicate request', items: [D('Desktop · filled', { step: 2, prefill: 'filled' }), M('Mobile · inline errors', { sc: 'errors' }), M('Mobile · domain mismatch', { sc: 'domain', prefill: 'filled' }), M('Mobile · duplicate request', { sc: 'dupe', prefill: 'filled' })] },
+      { no: '02b', title: 'Page 2 · Verify your email', note: 'Code sent, wrong code, verified', items: [D('Desktop · code sent (resend countdown)', { sc: 'verify-sent', prefill: 'filled' }), M('Mobile · wrong code', { sc: 'verify-wrong', prefill: 'filled' }), M('Mobile · verified', { sc: 'verify-ok', prefill: 'filled' })] },
+      { no: '03', title: 'Page 3 · Consent & signature', note: 'Ready to submit, typed-name fallback, incomplete', items: [D('Desktop · ready', { step: 3, prefill: 'filled' }), M('Mobile · typed signature', { sc: 'typed-sig', prefill: 'filled' }), M('Mobile · incomplete (Submit disabled)', { sc: 'incomplete', prefill: 'filled' })] },
+      { no: '04', title: 'Page 4 · Request submitted', note: 'The invite link is never shown here', items: [D('Desktop', { step: 4, prefill: 'filled' }), M('Mobile', { step: 4, prefill: 'filled' })] },
+      { no: '05', title: 'System · Session expired', note: 'Draft saved, Resume action', items: [D('Desktop · session expired', { sc: 'expired', prefill: 'filled' }), M('Mobile · session expired', { sc: 'expired', prefill: 'filled' })] },
+    ];
+  }
+  principles() {
+    const P = (n, t, d, where, isNew) => ({ n, t, d, where, isNew: !!isNew, bd: isNew ? '#DDD6FE' : '#E5E7EB', bg: isNew ? '#FAF8FF' : '#FFFFFF' });
+    return [
+      P(1, "Ask only what we can't already know", 'Branch data is auto-filled and locked. The requester types only first name, last name, and email. No more than 3–4 inputs per screen.', 'See: Page 2 · Branch information'),
+      P(2, 'One purpose per step, progress always visible', 'Vertical stepper on desktop. Below 900px it becomes a compact "Step X of 3" bar.', 'See: stepper, mobile top bar'),
+      P(3, 'Persistent labels with a visible example', 'Labels sit on the border and never disappear. The example placeholder stays visible on focus.', 'See: Branch code, First name'),
+      P(4, 'Concise microcopy under fields', 'One line, only where it prevents a mistake. No paragraphs inside the form.', 'See: Note box, email helper'),
+      P(5, 'Buttons name the action', '"Verify branch code", "Verify email", "Submit request" instead of a generic "Next".', 'See: primary buttons'),
+      P(6, 'Inline errors that say how to fix', 'Errors replace the helper text, use an icon and the "Error:" prefix, and give the correct format or a next step.', 'See: Page 1 not found, Page 2 errors'),
+      P(7, 'Accessible by default', 'Contrast of 4.5:1 or higher, including placeholders. Visible focus rings, 44–48px targets, labels tied to inputs, numeric/email keyboards, aria-live lookup results, and a typed-name option instead of drawing a signature.', 'See: consent row, signature, mobile bar'),
+      P(8, 'Trust cues near consent', 'The PDPA statement and Privacy Policy link sit right next to the checkbox, with a clear purpose for the data.', 'See: Page 3 · Terms'),
+      P(9, 'Verify before we send', 'Invites go only to an email proven with a 6-digit code: resend countdown, limited attempts, clear wrong-code errors.', 'See: Page 2 · Verify your email', true),
+      P(10, "Don't leak what you protect", 'The lookup shows a masked preview (Lotus… / LOTUS…), is rate-limited, and returns the same generic message for unknown codes.', 'See: Page 1 found, lookup spec card', true),
+      P(11, 'Everything is auditable', 'Every lookup, verification, consent, approval, rejection, and resend is logged with who, when, and what.', 'See: Admin · Activity tab', true),
+    ];
+  }
+  renderVals() {
+    const s = this.state;
+    const tabsDef = [['proto', 'Prototype'], ['screens', 'All screens'], ['comp', 'Components'], ['rat', 'Design principles'], ['admin', 'Admin']];
+    const tabs = tabsDef.map(([k, label]) => { const on = s.tab === k; return { label, sel: on ? 'true' : 'false', bg: on ? '#FFFFFF' : 'transparent', fg: on ? '#0F1220' : '#4B5563', sh: on ? '0 1px 3px rgba(15,18,32,.1)' : 'none', go: () => { this.setState({ tab: k }); window.scrollTo(0, 0); } }; });
+    const q = s.q.trim().toLowerCase();
+    const shown = s.rows.filter(r => (s.filter === 'all' || r.status === s.filter) && (!q || [r.id, r.first, r.last, r.email, r.code, r.dealer, r.branch].join(' ').toLowerCase().includes(q)));
+    const filters = [['all', 'All'], ['pending', 'Pending review'], ['approved', 'Approved'], ['sent', 'Invite sent'], ['rejected', 'Rejected']].map(([k, t]) => {
+      const on = s.filter === k;
+      return { t, on: on ? 'true' : 'false', count: k === 'all' ? s.rows.length : s.rows.filter(r => r.status === k).length, bg: on ? '#6D3FE0' : 'transparent', fg: on ? '#FFFFFF' : '#374151', cbg: on ? 'rgba(255,255,255,.22)' : '#F3F4F6', pick: () => this.setState({ filter: k }) };
+    });
+    const pickedIds = Object.keys(s.picked).filter(k => s.picked[k] && s.rows.some(r => r.id === k));
+    const decorate = r => {
+      const m = this.SM[r.status], sl = this.sla(r), ex = this.expiry(r);
+      return { ...r, name: r.first + ' ' + r.last, st: m[0], sbg: m[1], sfg: m[2], isP: r.status === 'pending', isA: r.status === 'approved', isS: r.status === 'sent', isR: r.status === 'rejected',
+        dateText: this.fmt(r.submitted), hasSla: !!sl, sla: sl ? sl[0] : '', slaBg: sl ? sl[1] : '', slaFg: sl ? sl[2] : '',
+        hasExp: !!ex, exp: ex ? ex[0] : '', expBg: ex ? ex[1] : '', expFg: ex ? ex[2] : '' };
+    };
+    const aRows = shown.map(r => {
+      const x = decorate(r);
+      const open = () => this.setState({ sel: r.id, dtab: 'details', ap: null });
+      return { ...x, rowBg: s.sel === r.id ? '#F5F3FF' : s.picked[r.id] ? '#FAF8FF' : '#FFFFFF', ariaSel: s.sel === r.id ? 'true' : 'false', open,
+        key: e => { if (e.key === 'Enter') { e.preventDefault(); open(); } },
+        stop: e => e.stopPropagation(), checked: !!s.picked[r.id], selLabel: 'Select ' + x.name,
+        toggleSel: () => this.setState(st => ({ picked: { ...st.picked, [r.id]: !st.picked[r.id] } })) };
+    });
+    const allSel = shown.length > 0 && shown.every(r => s.picked[r.id]);
+    const selRow = s.rows.find(r => r.id === s.sel);
+    let d = {};
+    if (selRow) {
+      const x = decorate(selRow);
+      d = { ...x, isPending: x.isP, isApproved: x.isA, isSent: x.isS, isRejected: x.isR,
+        domainWarn: selRow.email.split('@')[1] !== selRow.domain, sigMethod: selRow.sig === 'typed' ? 'typed name' : 'drawn', sigAlt: 'Signature of ' + x.name + ', ' + (selRow.sig === 'typed' ? 'typed' : 'drawn'),
+        roomLabel: x.isS || x.isA ? 'OpenChat room' : 'Mapped OpenChat room', roomName: this.roomName(selRow.room),
+        sentText: selRow.sentAt ? this.fmt(selRow.sentAt) : '', reason: selRow.reason || '', reasonNote: selRow.reasonNote || '' };
+    }
+    const dLog = selRow ? this.logFor(selRow) : [];
+    const ap = s.ap;
+    const apResend = selRow && selRow.status === 'sent';
+    const apRooms = this.ROOMS.map(rm => { const on = ap && ap.room === rm.id; return { ...rm, on: on ? 'true' : 'false', rec: selRow && this.mapRoom(selRow.dealer) === rm.id, bd: on ? '#6D3FE0' : '#E5E7EB', bg: on ? '#F5F3FF' : '#FFFFFF', dot: on ? '5px solid #6D3FE0' : '1.5px solid #6B7280', pick: () => this.setState(st => ({ ap: { ...st.ap, room: rm.id } })) }; });
+    const rj = s.rj;
+    const rjOk = rj && rj.reason && (rj.reason !== 'Other' || rj.note.trim().length >= 3);
+    const rjIds = rj ? rj.ids : [];
+    return {
+      tabs, tProto: s.tab === 'proto', tScreens: s.tab === 'screens', tComp: s.tab === 'comp', tRat: s.tab === 'rat', tAdmin: s.tab === 'admin',
+      vDesk: s.view === 'desktop', vMob: s.view === 'mobile',
+      deskBg: s.view === 'desktop' ? '#6D3FE0' : 'transparent', deskFg: s.view === 'desktop' ? '#FFFFFF' : '#374151',
+      mobBg: s.view === 'mobile' ? '#6D3FE0' : 'transparent', mobFg: s.view === 'mobile' ? '#FFFFFF' : '#374151',
+      setDesk: () => this.setState({ view: 'desktop' }), setMob: () => this.setState({ view: 'mobile' }),
+      screenRows: this.screenRows(), principles: this.principles(),
+      roleOptions: ['Branch manager', 'Branch coordinator', 'Sales staff'],
+      q: s.q, setQ: e => this.setState({ q: e.target.value }),
+      filters, aRows, aEmpty: aRows.length === 0, countText: aRows.length + (aRows.length === 1 ? ' request' : ' requests'),
+      allSel, toggleAll: () => this.setState(st => { const p = { ...st.picked }; shown.forEach(r => { p[r.id] = !allSel; }); return { picked: p }; }),
+      hasBulk: pickedIds.length > 0, selCount: pickedIds.length, clearSel: () => this.setState({ picked: {} }),
+      bulkApprove: () => {
+        const ids = pickedIds.filter(id => { const r = s.rows.find(x => x.id === id); return r.status === 'pending' || r.status === 'approved'; });
+        if (!ids.length) { this.toast('No pending or approved requests in the selection'); return; }
+        this.sendInvite(ids, r => r.room, false); this.setState({ picked: {} }); this.toast('Approved and sent ' + ids.length + (ids.length === 1 ? ' invite' : ' invites'));
+      },
+      bulkReject: () => { const ids = pickedIds.filter(id => s.rows.find(x => x.id === id).status !== 'rejected'); if (!ids.length) { this.toast('Selected requests are already rejected'); return; } this.setState({ rj: { ids, reason: '', note: '' } }); },
+      exportSel: () => this.csv(s.rows.filter(r => pickedIds.includes(r.id))), exportAll: () => this.csv(shown),
+      hasToast: !!s.toast, toast: s.toast,
+      hasSel: !!selRow, d, dLog, dLogCount: dLog.length,
+      dtDetails: s.dtab === 'details', dtActivity: s.dtab === 'activity',
+      dtDetailsSel: s.dtab === 'details' ? 'true' : 'false', dtActSel: s.dtab === 'activity' ? 'true' : 'false',
+      dtDetailsBd: s.dtab === 'details' ? '#6D3FE0' : 'transparent', dtActBd: s.dtab === 'activity' ? '#6D3FE0' : 'transparent',
+      dtDetailsFg: s.dtab === 'details' ? '#6D3FE0' : '#4B5563', dtActFg: s.dtab === 'activity' ? '#6D3FE0' : '#4B5563',
+      showDetails: () => this.setState({ dtab: 'details' }), showActivity: () => this.setState({ dtab: 'activity' }),
+      closeSel: () => this.setState({ sel: null, ap: null }),
+      openApprove: () => selRow && this.setState({ ap: { step: selRow.status === 'pending' ? 1 : 2, room: selRow.room || this.mapRoom(selRow.dealer) } }),
+      openReject: () => selRow && this.setState({ rj: { ids: [selRow.id], reason: '', note: '' } }),
+      reopen: () => { if (!selRow) return; this.update([selRow.id], { status: 'pending', reason: '', reasonNote: '' }); this.addLog([selRow.id], 'Reopened request for review'); this.toast('Request reopened'); },
+      apOpen: !!(ap && selRow), apStep1: !!(ap && ap.step === 1), apStep2: !!(ap && ap.step === 2),
+      apTitle: apResend ? 'Resend invite' : selRow && selRow.status === 'approved' ? 'Send invite' : 'Approve request',
+      apStepText: ap && ap.step === 1 ? 'Step 1 of 2 · Choose OpenChat room' : (selRow && selRow.status === 'pending' ? 'Step 2 of 2 · Preview invite email' : 'Preview invite email'),
+      apRooms, apRoomName: ap ? this.roomName(ap.room) : '',
+      apBackLabel: ap && ap.step === 2 && selRow && selRow.status === 'pending' ? 'Back' : 'Cancel',
+      apNextLabel: ap && ap.step === 1 ? 'Preview email' : apResend ? 'Resend invite' : selRow && selRow.status === 'pending' ? 'Approve & send invite' : 'Send invite',
+      apClose: () => this.setState({ ap: null }),
+      apBack: () => { if (ap && ap.step === 2 && selRow && selRow.status === 'pending') this.setState({ ap: { ...ap, step: 1 } }); else this.setState({ ap: null }); },
+      apNext: () => {
+        if (!ap || !selRow) return;
+        if (ap.step === 1) { this.setState({ ap: { ...ap, step: 2 } }); return; }
+        this.sendInvite([selRow.id], () => ap.room, apResend);
+        this.setState({ ap: null, dtab: 'activity' });
+        this.toast((apResend ? 'Invite resent to ' : 'Invite sent to ') + selRow.email);
+      },
+      hasRjBulk: !!rj, rjTitle: rjIds.length > 1 ? 'Reject ' + rjIds.length + ' requests' : 'Reject request',
+      rjReasons: this.REASONS.map(t => { const on = rj && rj.reason === t; return { t, on: on ? 'true' : 'false', bd: on ? '#DC3E3E' : '#E5E7EB', bg: on ? '#FEF2F2' : '#FFFFFF', dot: on ? '5px solid #DC3E3E' : '1.5px solid #6B7280', pick: () => this.setState(st => ({ rj: { ...st.rj, reason: t } })) }; }),
+      rjNote: rj ? rj.note : '', setRjNote: e => { const v = e.target.value; this.setState(st => ({ rj: { ...st.rj, note: v } })); },
+      rjNoteLabel: rj && rj.reason === 'Other' ? 'Details (required)' : 'Details (optional)',
+      rjCan: !!rjOk, rjCannot: !rjOk, rjConfirmLabel: rjIds.length > 1 ? 'Reject ' + rjIds.length + ' requests' : 'Reject request',
+      rjClose: () => this.setState({ rj: null }),
+      rjConfirm: () => {
+        if (!rjOk) return; const ids = rj.ids, reason = rj.reason, note = rj.note.trim();
+        this.update(ids, { status: 'rejected', reason, reasonNote: note });
+        this.addLog(ids, 'Rejected · ' + reason + (note ? ' · "' + note + '"' : ''));
+        this.setState({ rj: null, picked: {} }); this.toast(ids.length > 1 ? 'Rejected ' + ids.length + ' requests' : 'Request rejected');
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

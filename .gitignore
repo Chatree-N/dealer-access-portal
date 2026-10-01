@@ -1,0 +1,62 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# build / test output
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+*.tsbuildinfo
+
+# env and secrets (keep the example file)
+.env
+.env.*
+!.env.example
+
+# local runtime data (signatures, DB volumes, mail)
+.data/
+pgdata/
+mailpit-data/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# keys and certificates
+*.pem
+*.key
+
+# Local runtime data
+.data/
+pgdata/
+mailpit-data/
+
+# Testing
+playwright-report/
+test-results/
+blob-report/
+
+# Editor and keys
+*.key
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Environments
+!.env.example

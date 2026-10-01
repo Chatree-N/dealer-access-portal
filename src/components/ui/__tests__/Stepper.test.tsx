@@ -1,0 +1,19 @@
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { Stepper } from '../Stepper';
+
+describe('Stepper', () => {
+  it('renders current step on mobile', () => {
+    render(<Stepper currentStep={2} />);
+    expect(screen.getByText('Step 2 of 3')).toBeDefined();
+    expect(screen.getAllByText('Your details').length).toBeGreaterThan(0);
+  });
+
+  it('marks previous steps as complete', () => {
+    render(<Stepper currentStep={2} />);
+    // Step 1 is complete, should have a ✓
+    expect(screen.getByText('✓')).toBeDefined();
+    // Step 3 is not complete, should show number 3
+    expect(screen.getByText('3')).toBeDefined();
+  });
+});
