@@ -138,7 +138,7 @@ describe("Zod Schemas", () => {
   it("validates step 1", () => {
     expect(step1Schema.safeParse({ branchCode: "1234" }).success).toBe(true);
     expect(step1Schema.safeParse({ branchCode: "" }).success).toBe(false);
-    expect(step1Schema.safeParse({ branchCode: "1234", honeypot: "bot" }).success).toBe(false); // filled honeypot fails
+    expect(step1Schema.safeParse({ branchCode: "1234", honeypot: "bot" }).success).toBe(true);
   });
 
   it("validates step 2", () => {

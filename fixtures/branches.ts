@@ -12,7 +12,6 @@ export type Branch = {
   name: string;
   province: string;
   region: string;
-  roomId: string;
   status: "active" | "inactive";
 };
 

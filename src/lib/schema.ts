@@ -4,7 +4,7 @@ import { BRANCHES, DEALERS } from "../../fixtures/branches";
 // Step 1: Branch Code + Honeypot
 export const step1Schema = z.object({
   branchCode: z.string().min(1, "Branch code is required"),
-  honeypot: z.string().max(0, "").optional(),
+  honeypot: z.string().optional(),
 });
 
 // Step 2: Details

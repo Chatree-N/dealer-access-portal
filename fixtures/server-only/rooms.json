@@ -1,0 +1,47 @@
+[
+  {
+    "id": "r-lotus-bkk",
+    "name": "Lotus Telecom - Bangkok Metro",
+    "url": "https://openchat.example/rooms/lotus-bkk"
+  },
+  {
+    "id": "r-lotus-central",
+    "name": "Lotus Telecom - Central",
+    "url": "https://openchat.example/rooms/lotus-central"
+  },
+  {
+    "id": "r-lotus-north",
+    "name": "Lotus Telecom - North",
+    "url": "https://openchat.example/rooms/lotus-north"
+  },
+  {
+    "id": "r-lotus-ne",
+    "name": "Lotus Telecom - Northeast",
+    "url": "https://openchat.example/rooms/lotus-northeast"
+  },
+  {
+    "id": "r-lotus-south",
+    "name": "Lotus Telecom - South",
+    "url": "https://openchat.example/rooms/lotus-south"
+  },
+  {
+    "id": "r-harbor-east",
+    "name": "Harbor Mobile - East & Central",
+    "url": "https://openchat.example/rooms/harbor-east-central"
+  },
+  {
+    "id": "r-harbor-north",
+    "name": "Harbor Mobile - North & Northeast",
+    "url": "https://openchat.example/rooms/harbor-north-ne"
+  },
+  {
+    "id": "r-orchid-all",
+    "name": "Orchid Devices - All regions",
+    "url": "https://openchat.example/rooms/orchid-all"
+  },
+  {
+    "id": "r-maple-all",
+    "name": "Maple Wireless - All regions",
+    "url": "https://openchat.example/rooms/maple-all"
+  }
+]

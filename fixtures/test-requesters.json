@@ -1,0 +1,38 @@
+[
+  {
+    "firstName": "Anong",
+    "lastName": "Siriwat",
+    "email": "anong.siriwat@lotustelecom.example",
+    "note": "matches dealer domain"
+  },
+  {
+    "firstName": "Preecha",
+    "lastName": "Rattana",
+    "email": "preecha.r@lotus-retail.example",
+    "note": "matches 2nd Lotus domain"
+  },
+  {
+    "firstName": "Malee",
+    "lastName": "Chaiyo",
+    "email": "malee.chaiyo@mail.example",
+    "note": "does not match -> domain warning"
+  },
+  {
+    "firstName": "Somsri",
+    "lastName": "Boonma",
+    "email": "SOMSRI@HarborMobile.example",
+    "note": "uppercase, still matches"
+  },
+  {
+    "firstName": "Kanda",
+    "lastName": "Wong-Ngam",
+    "email": "kanda@maplewireless.example",
+    "note": "dealer has no domains -> no warning"
+  },
+  {
+    "firstName": "Dupe",
+    "lastName": "Tester",
+    "email": "duplicate@lotustelecom.example",
+    "note": "use for the dupe scenario (already pending)"
+  }
+]
