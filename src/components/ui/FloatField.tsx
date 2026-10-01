@@ -71,7 +71,7 @@ export const FloatField = React.forwardRef<HTMLInputElement, FloatFieldProps>(
     return (
       <div className={`relative flex flex-col gap-1 w-full ${className}`}>
         <div 
-          className={`relative flex items-center border ${borderColor} rounded-[10px] ${bgClass} transition-all focus-within:ring-2 ${ringColor}`}
+          className={`relative flex items-center border ${borderColor} rounded-[10px] px-3.5 ${bgClass} transition-all focus-within:ring-2 ${ringColor}`}
         >
           {icon && (
             <div className="pl-3 flex items-center justify-center text-[#9CA3AF]">
@@ -88,10 +88,10 @@ export const FloatField = React.forwardRef<HTMLInputElement, FloatFieldProps>(
           <div className="relative w-full flex-1">
             <label
               htmlFor={inputId}
-              className={`absolute left-3 transition-all duration-200 pointer-events-none z-10 
+              className={`absolute left-0 transition-all duration-200 pointer-events-none z-10 
                 ${activeLabel 
-                  ? "top-1 text-[11px] text-[#6B7280]" 
-                  : "top-1/2 -translate-y-1/2 text-[15px] text-[#6B7280]"
+                  ? "top-1 text-[13px] text-[#6B7280]" 
+                  : "top-1/2 -translate-y-1/2 text-[16px] text-[#6B7280]"
                 } ${required ? "after:content-['*'] after:ml-0.5 after:text-[#B91C1C]" : ""}
               `}
             >
@@ -102,7 +102,7 @@ export const FloatField = React.forwardRef<HTMLInputElement, FloatFieldProps>(
               <select
                 id={inputId}
                 disabled={disabled || locked}
-                className={`w-full bg-transparent outline-none px-3 pt-5 pb-1 text-[15px] text-[#0F1220] min-h-[48px] appearance-none ${monoClass}`}
+                className={`w-full bg-transparent outline-none pt-6 pb-2 text-[16px] text-[#0F1220] min-h-[48px] appearance-none ${monoClass}`}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 value={value}
@@ -123,7 +123,7 @@ export const FloatField = React.forwardRef<HTMLInputElement, FloatFieldProps>(
                 readOnly={locked}
                 placeholder={placeholder}
                 value={value}
-                className={`w-full bg-transparent outline-none px-3 pt-5 pb-1 text-[15px] text-[#0F1220] min-h-[48px] ${monoClass}`}
+                className={`w-full bg-transparent outline-none pt-6 pb-2 text-[16px] text-[#0F1220] min-h-[48px] ${monoClass}`}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 aria-invalid={isError}

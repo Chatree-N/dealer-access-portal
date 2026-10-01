@@ -16,8 +16,8 @@ describe('FloatField', () => {
   it('floats label when options are provided (select mode)', () => {
     render(<FloatField label="Select One" options={['Opt1', 'Opt2']} />);
     const label = screen.getByText('Select One');
-    // It should have the small label class "top-1 text-[11px]"
-    expect(label.className).toMatch(/top-1 text-\[11px\]/);
+    // It should have the small label class "top-1 text-[13px]"
+    expect(label.className).toMatch(/top-1 text-\[13px\]/);
   });
 
   it('renders error state correctly', () => {
