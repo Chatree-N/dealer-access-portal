@@ -58,7 +58,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       step: 2,
       lookupState: "found",
       branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
-      form2: { firstName: "Jane", lastName: "Doe", email: "jane.doe@gmail.com" }
+      form2: { firstName: "Jane", lastName: "Doe", email: "jane.doe@example.com" }
     };
   } else if (s === "dupe") {
     initialState = {

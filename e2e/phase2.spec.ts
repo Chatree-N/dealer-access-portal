@@ -66,7 +66,7 @@ test.describe('Phase 2 Form', () => {
   test('not found cases (9999 and 0000)', async ({ page }) => {
     await page.getByLabel(/Branch code/).fill('9999');
     await page.getByRole('button', { name: 'Verify branch code' }).click();
-    await expect(page.getByText(/We couldn't find a branch with that code/i)).toBeVisible();
+    await expect(page.getByText(/Branch not found/i)).toBeVisible();
   });
 
   test('wrong OTP then correct OTP', async ({ page }) => {

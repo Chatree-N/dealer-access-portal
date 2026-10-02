@@ -48,7 +48,7 @@ export function Stepper({ currentStep }: StepperProps) {
           let descColor = "text-[#6B7280]";
 
           if (isCompleted) {
-            circleColor = "bg-[#2E7D5B] border-[#2E7D5B] text-white";
+            circleColor = "bg-[#DCF5E7] border-[#DCF5E7] text-[#2E7D5B]";
             textColor = "text-[#0F1220]";
           } else if (isCurrent) {
             circleColor = "bg-white border-[#6D3FE0] text-[#6D3FE0] ring-4 ring-[rgba(109,63,224,.1)]";
@@ -60,7 +60,7 @@ export function Stepper({ currentStep }: StepperProps) {
             <div key={step.num} className="flex gap-4 items-start relative">
               {/* Connector Line */}
               {step.num !== 3 && (
-                <div className={`absolute top-8 left-3.5 w-0.5 h-10 ${isCompleted ? "bg-[#2E7D5B]" : "bg-[#E5E7EB]"}`} />
+                <div className={`absolute top-8 left-3.5 w-0.5 h-10 ${isCompleted ? "bg-[#6D3FE0]" : "bg-[#E5E7EB]"}`} />
               )}
               
               <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold z-10 ${circleColor}`}>

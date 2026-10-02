@@ -5,7 +5,7 @@ export interface FloatFieldProps extends React.InputHTMLAttributes<HTMLInputElem
   helper?: string;
   error?: string;
   warning?: string;
-  success?: string;
+  success?: string | boolean;
   locked?: boolean;
   loading?: boolean;
   forceFocus?: boolean;
@@ -75,8 +75,9 @@ export const FloatField = React.forwardRef<HTMLInputElement, FloatFieldProps>(
     const selColor = hasValue ? "#111827" : "#6B7280";
     const monoClass = mono ? "font-['JetBrains_Mono',ui-monospace,monospace] tracking-[0.04em]" : "font-sans";
     
-    const helperText = isError ? error : loading ? helper : isWarning ? warning : isSuccess ? success : (helper ?? (isLocked ? 'Auto-filled from your branch code' : ''));
-    const hasHelper = !!helperText;
+    const successMsg = typeof success === "string" ? success : helper;
+    const helperText = isError ? error : loading ? helper : isWarning ? warning : isSuccess ? successMsg : (helper ?? (isLocked ? 'Auto-filled from your branch code' : ''));
+    const hasHelper = !!helperText && typeof helperText === "string";
     const hc = isError ? "#B91C1C" : isWarning ? "#B45309" : isSuccess ? "#2E7D5B" : "#6B7280";
 
     const handleFocusInput = () => {
@@ -179,7 +180,7 @@ export const FloatField = React.forwardRef<HTMLInputElement, FloatFieldProps>(
 
           {loading && (
             <span style={{ display: "flex", flex: "none", marginTop: "-8px" }}>
-              <span aria-label="Loading" className="animate-spin" style={{ width: 16, height: 16, borderRadius: 999, border: "2px solid #DDD6FE", borderTopColor: "#6D3FE0", display: "inline-block", boxSizing: "border-box" }} />
+              <span role="status" aria-label="Loading" className="animate-spin" style={{ width: 16, height: 16, borderRadius: 999, border: "2px solid #DDD6FE", borderTopColor: "#6D3FE0", display: "inline-block", boxSizing: "border-box" }} />
             </span>
           )}
           {isLocked && (

@@ -109,7 +109,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
   // Actions
   const handleStep1 = form1.handleSubmit(async (data) => {
     if (data.honeypot) {
-      setReqId("REQ-0001");
+      setReqId("#REQ-0001");
       setStep(4);
       return;
     }
@@ -158,7 +158,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
   });
 
   const handleStep3 = form3.handleSubmit(() => {
-    setReqId("REQ-0042");
+    setReqId("#REQ-0042");
     setStep(4);
   });
 
@@ -207,6 +207,16 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                   <p className="m-0 text-[16px] leading-[24px] text-[#6B7280]">Used to verify your eligibility to join the Line OpenChat group.</p>
                 </div>
 
+                {networkError && (
+                  <div role="alert" className="flex gap-3 items-start flex-wrap p-[14px_16px] rounded-xl bg-[#FEE2E2]">
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[2px]"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0M12 19h.01"></path><path d="M3 3l18 18"></path></svg>
+                    <div className="flex-1 min-w-[180px] flex flex-col gap-[2px] text-[15px] leading-[22px]">
+                      <span className="font-bold text-[#0F1220]">Connection problem</span>
+                      <span className="text-[#1F2937]">{networkError}</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="relative flex gap-3 p-4 rounded-xl bg-[#EDE9FE]">
                   <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6D3FE0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[2px]">
                     <circle cx="12" cy="12" r="9.5"></circle><path d="M12 11v5.5M12 7.5h.01"></path>
@@ -221,22 +231,41 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                 
                 <FloatField 
                   label="Branch code" 
+                  required={true}
                   placeholder="e.g. 1234" 
                   icon="search"
                   mono
                   locked={lookupState === "found"}
+                  success={lookupState === "found"}
                   error={form1.formState.errors.branchCode?.message}
                   {...form1.register("branchCode")}
                 />
                 
-                <div aria-live="polite">
-                  {lookupState === "loading" && <div className="text-[#4B5563]">Verifying…</div>}
-                  {lookupState === "notfound" && <div className="text-[#B91C1C]">Error: We couldn&apos;t find a branch with that code.</div>}
-                  {networkError && <div className="text-[#B91C1C]" role="alert">{networkError}</div>}
+                <div aria-live="polite" aria-atomic="true" className="flex flex-col">
+                  {lookupState === "notfound" && (
+                    <div className="relative flex gap-3 p-[14px_16px] rounded-xl bg-[#FEE2E2]">
+                      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[2px]"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 7.5v5.5M12 16.5h.01"></path></svg>
+                      <div className="flex flex-col gap-[2px] min-w-0 text-[15px] leading-[22px] text-[#111827]">
+                        <div className="font-bold">Branch not found</div>
+                        <div>Sure the code is right? <a href="#" className="text-[#6D3FE0] font-semibold no-underline">Contact the team</a> to add your branch.</div>
+                      </div>
+                    </div>
+                  )}
                   {lookupState === "found" && branchData?.status === "found" && (
-                    <div className="bg-[#FAFAFB] border border-[#E5E7EB] p-4 rounded-[12px] flex flex-col gap-1">
-                      <span className="text-[13px] text-[#4B5563]">Branch found</span>
-                      <span className="text-[15px] font-semibold text-[#0F1220]">{branchData.dealerName} / {branchData.branchName}</span>
+                    <div role="status" className="relative flex gap-3 p-[14px_16px] rounded-xl bg-[#DCF5E7]">
+                      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E7D5B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[2px]"><circle cx="12" cy="12" r="9.5"></circle><path d="m8 12.5 2.8 2.8L16 9.5"></path></svg>
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <div className="text-[14px] font-bold text-[#1F5C42]">Branch found</div>
+                        <div className="flex flex-wrap items-center gap-2 text-[16px] leading-[24px] font-semibold text-[#0F1220]">
+                          <span>{branchData.dealerName}</span>
+                          <span aria-hidden="true" className="text-[#6B7280] font-normal">/</span>
+                          <span>{branchData.branchName}</span>
+                        </div>
+                        <div className="flex items-center gap-[6px] text-[13px] leading-[18px] text-[#1F5C42]">
+                          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+                          <span>Names are partly hidden for privacy. Confirm this is your branch.</span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -294,12 +323,13 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                 <div className="flex flex-col gap-[20px]">
                   <h2 className="m-0 text-[14px] font-semibold text-[#4B5563]">Requester</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px_16px]">
-                    <FloatField label="First name" icon="user" error={form2.formState.errors.firstName?.message} {...form2.register("firstName")} />
-                    <FloatField label="Last name" error={form2.formState.errors.lastName?.message} {...form2.register("lastName")} />
+                    <FloatField label="First name" required={true} icon="user" error={form2.formState.errors.firstName?.message} {...form2.register("firstName")} />
+                    <FloatField label="Last name" required={true} error={form2.formState.errors.lastName?.message} {...form2.register("lastName")} />
                   </div>
 
                   <FloatField 
                     label="Email address" 
+                    required={true}
                     icon="mail"
                     error={form2.formState.errors.email?.message}
                     helper="We'll send the OpenChat invite link to this address. Use an email you check daily."
@@ -342,6 +372,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                         <div className="flex-1">
                           <FloatField 
                             label="Verification code" 
+                            required={true}
                             mono 
                             error={otpError}
                             value={otpInput}
@@ -362,7 +393,9 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
 
                 <div className="mt-[40px] flex items-center justify-between gap-[16px]">
                   <Button type="button" variant="secondary" onClick={() => setStep(1)} className="min-w-[112px]">Back</Button>
-                  <Button type="submit" disabled={!otpState?.isVerified} className="min-w-[140px]">Continue</Button>
+                  <Button type="submit" disabled={!otpState?.isVerified} className="min-w-[140px]">
+                    {otpState?.isVerified ? "Continue" : "Next"}
+                  </Button>
                 </div>
               </form>
             )}
@@ -392,7 +425,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold">Signature</span>
+                    <span className="font-semibold text-[#374151] text-[13px] ml-[6px]">Signature<span aria-hidden="true" className="text-[#B91C1C] ml-[2px]">*</span></span>
                     <button type="button" className="text-[14px] font-semibold text-[#6D3FE0] hover:underline focus:outline-none focus:ring-2 focus:ring-[rgba(109,63,224,.3)] rounded px-1" onClick={() => {
                       const newMode = toggleSignatureMode(sigType);
                       setSigType(newMode);
@@ -406,7 +439,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                   {sigType === "drawn" ? (
                     <SignaturePad onChange={(data) => form3.setValue("signature.value", data || "")} />
                   ) : (
-                    <FloatField label="Signature (typed)" icon="pen" {...form3.register("signature.value")} />
+                    <FloatField label="Signature (typed)" required={true} icon="pen" {...form3.register("signature.value")} />
                   )}
                   {form3.formState.errors.signature?.value && <div className="text-[#B91C1C] text-sm">{form3.formState.errors.signature.value.message}</div>}
                 </div>
