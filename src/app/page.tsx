@@ -272,19 +272,19 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                   <div className="relative bg-[#F3F4F6] border border-[#E5E7EB] rounded-[12px] p-[16px_20px] flex flex-col gap-[14px]">
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-[14px_24px]">
                       <div className="flex flex-col gap-[2px] min-w-0">
-                        <span className="text-[13px] text-[#6B7280]">Dealer name</span>
+                        <span className="text-[13px] text-[#4B5563]">Dealer name</span>
                         <span className="text-[16px] leading-[24px] font-semibold text-[#111827]">{branchData?.status === "found" ? branchData.dealerName : ""}</span>
                       </div>
                       <div className="flex flex-col gap-[2px] min-w-0">
-                        <span className="text-[13px] text-[#6B7280]">Branch code</span>
+                        <span className="text-[13px] text-[#4B5563]">Branch code</span>
                         <span className="font-mono text-[15px] leading-[24px] font-semibold text-[#111827] tracking-[.04em]">{branchData?.status === "found" ? form1.getValues("branchCode") : ""}</span>
                       </div>
                       <div className="flex flex-col gap-[2px] min-w-0">
-                        <span className="text-[13px] text-[#6B7280]">Branch name</span>
+                        <span className="text-[13px] text-[#4B5563]">Branch name</span>
                         <span className="text-[16px] leading-[24px] font-semibold text-[#111827]">{branchData?.status === "found" ? branchData.branchName : ""}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-[6px] text-[13px] text-[#6B7280] border-t border-[#E5E7EB] pt-[12px]">
+                    <div className="flex items-center gap-[6px] text-[13px] text-[#4B5563] border-t border-[#E5E7EB] pt-[12px]">
                       <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
                       <span>Auto-filled from your branch code</span>
                     </div>
@@ -329,7 +329,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                   {!otpState ? (
                     <Button type="button" variant="secondary" onClick={triggerOtp}>Verify email</Button>
                   ) : otpState.isVerified ? (
-                    <div className="bg-[#DCF5E7] text-[#2E7D5B] p-4 rounded-[12px] font-medium flex items-center gap-2">
+                    <div className="bg-[#DCF5E7] text-[#1F6E4A] p-4 rounded-[12px] font-medium flex items-center gap-2">
                       <span>✓</span> Email verified
                     </div>
                   ) : (

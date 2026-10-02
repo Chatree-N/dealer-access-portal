@@ -40,7 +40,7 @@ test.describe('Phase 2 Form', () => {
     await page.getByRole('button', { name: 'Submit request' }).click();
 
     // Step 4: Success
-    await expect(page.getByText('Request submitted')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Request submitted' })).toBeVisible();
     await expect(page.getByText('REQ-')).toBeVisible();
     await checkAxe(page);
 
@@ -60,7 +60,7 @@ test.describe('Phase 2 Form', () => {
     await page.getByRole('button', { name: 'Verify branch code' }).click();
     
     // Should jump straight to success silently
-    await expect(page.getByText('Request submitted')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Request submitted' })).toBeVisible();
   });
 
   test('not found cases (9999 and 0000)', async ({ page }) => {
@@ -124,21 +124,20 @@ test.describe('Phase 2 Form - Mobile', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
 
     const firstNameInput = page.getByLabel(/First name/);
-    const labelId = await firstNameInput.getAttribute('id');
-    const label = page.locator(`label[for="${labelId}"]`);
-    
-    // Get label position when empty (not floated)
-    const labelBboxEmpty = await label.boundingBox();
     
     // Type into it and blur
     await firstNameInput.focus();
     await firstNameInput.pressSequentially('Happy', { delay: 10 });
     await page.getByRole('heading', { name: 'Your details' }).click(); // click away to blur
     
-    // Get label position when filled and blurred
-    const labelBboxFilled = await label.boundingBox();
+    // In the fieldset/legend approach, verify the legend (label) sits in the border notch
+    // above the input text area. Get the fieldset that contains this input.
+    const fieldset = page.locator('fieldset').filter({ has: firstNameInput });
+    const legend = fieldset.locator('legend');
+    const legendBbox = await legend.boundingBox();
+    const inputBbox = await firstNameInput.boundingBox();
     
-    // Assert that the label is higher up than it was when empty
-    expect(labelBboxFilled!.y).toBeLessThan(labelBboxEmpty!.y - 5);
+    // Legend bottom should be at or above the input top
+    expect(legendBbox!.y + legendBbox!.height).toBeLessThanOrEqual(inputBbox!.y + 4);
   });
 });
