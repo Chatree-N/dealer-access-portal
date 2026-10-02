@@ -359,34 +359,48 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                   {!otpState ? (
                     <Button type="button" variant="secondary" onClick={triggerOtp}>Verify email</Button>
                   ) : otpState.isVerified ? (
-                    <div className="bg-[#DCF5E7] text-[#1F6E4A] p-4 rounded-[12px] font-medium flex items-center gap-2">
-                      <span>✓</span> Email verified
+                    <div role="status" className="flex gap-[12px] p-[14px_16px] rounded-[12px] bg-[#DCF5E7]">
+                      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E7D5B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[2px]"><circle cx="12" cy="12" r="9.5"></circle><path d="m8 12.5 2.8 2.8L16 9.5"></path></svg>
+                      <div className="flex flex-col gap-[2px] text-[15px] leading-[22px]">
+                        <span className="font-bold text-[#1F5C42]">Email verified</span>
+                        <span className="text-[#1F2937]">Continue to consent and signature.</span>
+                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <h2 className="text-lg font-bold">Verify your email</h2>
-                        <p className="text-[#4B5563] text-sm">Enter the 6-digit code we sent to {watchedEmail}</p>
+                    <div className="flex flex-col gap-[24px]">
+                      <div className="flex flex-col gap-[6px]">
+                        <h2 className="m-0 text-[22px] md:text-[28px] leading-[1.25] font-bold text-[#0F1220] tracking-[-0.01em]">Verify your email</h2>
+                        <p className="m-0 text-[16px] leading-[24px] text-[#6B7280] break-words">Enter the 6-digit code we sent to <span className="text-[#111827] font-semibold">{watchedEmail}</span>.</p>
                       </div>
-                      <div className="flex gap-4 items-start">
+                      <div className="relative max-w-[360px] flex gap-4 items-start">
                         <div className="flex-1">
                           <FloatField 
                             label="Verification code" 
                             required={true}
+                            icon="key"
                             mono 
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                            placeholder="e.g. 123456"
                             error={otpError}
+                            helper={otpError ? undefined : "The code expires in 10 minutes. Check your spam folder if you can't find it."}
                             value={otpInput}
                             onChange={e => setOtpInput(e.target.value)}
                           />
-                          {!otpError && otpState.attempts > 0 && otpState.attempts < OTP_RULES.MAX_ATTEMPTS && (
-                            <div className="text-sm mt-1 text-[#4B5563]">{OTP_RULES.MAX_ATTEMPTS - otpState.attempts} attempts remaining</div>
-                          )}
                         </div>
                         <Button type="button" variant="secondary" onClick={handleVerifyOtp}>Verify code</Button>
                       </div>
-                      <Button type="button" variant="ghost" disabled={timeRemaining > 0} onClick={triggerOtp}>
-                        {timeRemaining > 0 ? `Resend code in ${timeRemaining}s` : "Send a new code"}
-                      </Button>
+                      <div aria-live="polite" className="flex items-center gap-[8px] flex-wrap text-[14px] leading-[20px] text-[#6B7280]">
+                        {timeRemaining > 0 ? (
+                          <span>Didn&apos;t get it? Resend code in <span className="font-mono text-[#111827] font-semibold">{Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}</span></span>
+                        ) : (
+                          <>
+                            <span>Didn&apos;t get it?</span>
+                            <button type="button" onClick={triggerOtp} className="whitespace-nowrap min-h-[36px] px-[10px] rounded-[8px] border-0 bg-transparent text-[#6D3FE0] font-[inherit] text-[14px] font-semibold cursor-pointer hover:bg-[#F5F3FF] focus:outline-none focus:ring-2 focus:ring-[rgba(109,63,224,.3)]">Send a new code</button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -421,7 +435,12 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                     I have read and agree to the terms and conditions. <a href="#" className="text-[#6D3FE0] font-semibold hover:underline">[Legal to confirm] Privacy Policy</a>.
                   </span>
                 </label>
-                {form3.formState.errors.consent && <div className="text-[#B91C1C] text-sm">{form3.formState.errors.consent.message}</div>}
+                {form3.formState.errors.consent && (
+                  <div className="text-[#B91C1C] text-sm flex gap-1 items-start">
+                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[2px]"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 7.5v5.5M12 16.5h.01"></path></svg>
+                    <span><span className="font-semibold">Error: </span>{form3.formState.errors.consent.message}</span>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
@@ -441,7 +460,12 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                   ) : (
                     <FloatField label="Signature (typed)" required={true} icon="pen" {...form3.register("signature.value")} />
                   )}
-                  {form3.formState.errors.signature?.value && <div className="text-[#B91C1C] text-sm">{form3.formState.errors.signature.value.message}</div>}
+                  {form3.formState.errors.signature?.value && (
+                    <div className="text-[#B91C1C] text-sm flex gap-1 items-start">
+                      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[2px]"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 7.5v5.5M12 16.5h.01"></path></svg>
+                      <span><span className="font-semibold">Error: </span>{form3.formState.errors.signature.value.message}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-[40px] flex items-center justify-between gap-[16px]">

@@ -44,6 +44,11 @@ test.describe('Phase 2C: Dev Scenarios', () => {
 
       // No overlap check
       await checkNoOverlap(page);
+
+      if (s !== "network") {
+        await expect(page.getByText('1234', { exact: true })).toBeVisible();
+      }
+
       if (s === "network") {
         await expect(page.getByText('Network error: Could not connect to the server.')).toBeVisible();
         await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();

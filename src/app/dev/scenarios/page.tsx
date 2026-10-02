@@ -34,17 +34,18 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
   const now = 1700000000000;
   let initialState: FormInitialState = {};
 
-  const defaultBranchData = lookupBranch("0042");
+  const defaultBranchData = lookupBranch("1234");
 
   if (s === "network") {
     initialState = {
       step: 1,
-      form1: { branchCode: "0042", honeypot: "" },
+      form1: { branchCode: "1234", honeypot: "" },
       networkError: "Network error: Could not connect to the server."
     };
   } else if (s === "errors") {
     initialState = {
       step: 2,
+      form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
       branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       form2Errors: {
@@ -56,6 +57,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
   } else if (s === "domain") {
     initialState = {
       step: 2,
+      form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
       branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane.doe@example.com" }
@@ -63,14 +65,16 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
   } else if (s === "dupe") {
     initialState = {
       step: 2,
+      form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
       branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       form2: { firstName: "Jane", lastName: "Doe", email: "dupe@example.com" },
-      duplicateError: "A request for dupe@example.com is already pending approval."
+      duplicateError: "Request #REQ-0011 was submitted on 01 Oct 2026. We'll email you once it's reviewed."
     };
   } else if (s === "verify-sent") {
     initialState = {
       step: 2,
+      form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
       branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
@@ -81,6 +85,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
     const verRes = verifyOtp(otpStart, "000000", now);
     initialState = {
       step: 2,
+      form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
       branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
@@ -91,6 +96,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
   } else if (s === "verify-ok") {
     initialState = {
       step: 2,
+      form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
       branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
@@ -99,12 +105,18 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
   } else if (s === "typed-sig") {
     initialState = {
       step: 3,
+      form1: { branchCode: "1234", honeypot: "" },
+      lookupState: "found",
+      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       sigType: "typed",
       form3: { consent: false, signature: { type: "typed", value: "Jane Doe" } }
     };
   } else if (s === "incomplete") {
     initialState = {
       step: 3,
+      form1: { branchCode: "1234", honeypot: "" },
+      lookupState: "found",
+      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       form3Errors: {
         consent: "Consent is required",
         "signature.value": "Signature is required"
@@ -119,6 +131,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
     };
     initialState = {
       step: 2,
+      form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
       branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
