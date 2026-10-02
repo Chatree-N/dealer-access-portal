@@ -15,18 +15,17 @@ const allTerms = [...terms, ...sampleRequesters];
 
 const dir = path.join(__dirname, '../.next/static');
 if (!fs.existsSync(dir)) {
-  console.log('No .next/static dir found');
-  process.exit(0);
+  console.error('No .next/static dir found');
+  process.exit(1);
 }
 
 try {
-  // Use grep -r to find terms
   for (const term of allTerms) {
     try {
-      const result = execSync(`grep -rlF "${term}" ${dir}`, { encoding: 'utf8' });
-      if (result.trim()) {
+      const out = require('child_process').execFileSync('grep', ['-rlF', term, dir], { encoding: 'utf8' });
+      if (out.trim()) {
         console.error(`ERROR: Found restricted term "${term}" in bundle:`);
-        console.error(result);
+        console.error(out);
         process.exit(1);
       }
     } catch (e) {

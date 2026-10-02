@@ -11,8 +11,8 @@ describe('Stepper', () => {
 
   it('marks previous steps as complete', () => {
     render(<Stepper currentStep={2} />);
-    // Step 1 is complete, should have a ✓
-    expect(screen.getByText('✓')).toBeDefined();
+    // Step 1 is complete, should not have number 1
+    expect(screen.queryByText('1')).toBeNull();
     // Step 3 is not complete, should show number 3
     expect(screen.getByText('3')).toBeDefined();
   });

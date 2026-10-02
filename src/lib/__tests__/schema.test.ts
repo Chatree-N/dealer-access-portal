@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { lookupBranch, isDomainWarning, OTP_RULES, sendOtp, verifyOtp, canResendOtp, step1Schema, step2Schema, step3Schema } from "../schema";
+import { lookupBranch, isDomainWarning, OTP_RULES, sendOtp, verifyOtp, canResendOtp, step1Schema, step2Schema, step3Schema, isDuplicateRequest } from "../schema";
 
 describe("Branch Lookup Logic", () => {
   it("returns found with masked values for valid branch 1234", () => {
@@ -149,5 +149,17 @@ describe("Zod Schemas", () => {
   it("validates step 3", () => {
     expect(step3Schema.safeParse({ consent: true, signature: { type: "typed", value: "Name" } }).success).toBe(true);
     expect(step3Schema.safeParse({ consent: false, signature: { type: "drawn", value: "data" } }).success).toBe(false);
+  });
+});
+
+describe("isDuplicateRequest", () => {
+  it("returns true for pending emails", () => {
+    expect(isDuplicateRequest("pending@example.com")).toBe(true);
+    expect(isDuplicateRequest("DUPE@EXAMPLE.COM")).toBe(true);
+  });
+
+  it("returns false for unknown emails", () => {
+    expect(isDuplicateRequest("new@example.com")).toBe(false);
+    expect(isDuplicateRequest("")).toBe(false);
   });
 });

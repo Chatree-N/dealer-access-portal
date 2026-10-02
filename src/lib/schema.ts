@@ -71,6 +71,13 @@ export function isDomainWarning(email: string, dealerDomains: string[]): boolean
   return !dealerDomains.some(domain => domain.toLowerCase() === emailDomain);
 }
 
+// Logic: Duplicate Request check
+export const MOCK_PENDING_EMAILS = ["pending@example.com", "dupe@example.com"];
+
+export function isDuplicateRequest(email: string): boolean {
+  return MOCK_PENDING_EMAILS.includes(email.toLowerCase());
+}
+
 // Logic: OTP Rules (pure functions)
 export type OtpState = {
   attempts: number;

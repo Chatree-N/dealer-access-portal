@@ -12,42 +12,84 @@ import {
   step1Schema, step2Schema, step3Schema, LookupResult, OtpState, OTP_RULES 
 } from "@/lib/schema";
 import { toggleSignatureMode, getCountdownSeconds } from "@/lib/logic";
+import { isDuplicateRequest } from "@/lib/schema";
 
-export default function RequestForm() {
-  const [step, setStep] = useState(1);
+export type FormInitialState = {
+  step?: number;
+  lookupState?: "idle" | "loading" | "found" | "notfound";
+  branchData?: LookupResult | null;
+  networkError?: string;
+  form1?: { branchCode: string; honeypot: string };
+  form2?: { firstName: string; lastName: string; email: string };
+  form2Errors?: Record<string, string>;
+  form2Touched?: Record<string, boolean>;
+  otpState?: OtpState | null;
+  otpInput?: string;
+  otpError?: string;
+  duplicateError?: string;
+  sigType?: "drawn" | "typed";
+  form3?: { consent: boolean; signature: { type: "drawn" | "typed"; value: string } };
+  form3Errors?: Record<string, string>;
+};
+
+export default function Page() {
+  return <RequestForm />;
+}
+
+export function RequestForm({ initialState = {} }: { initialState?: FormInitialState }) {
+  const [step, setStep] = useState(initialState.step || 1);
   const headingRef = useRef<HTMLHeadingElement>(null);
   
   // Step 1 State
   const form1 = useForm({
     resolver: zodResolver(step1Schema),
-    defaultValues: { branchCode: "", honeypot: "" }
+    defaultValues: initialState.form1 || { branchCode: "", honeypot: "" }
   });
-  const [lookupState, setLookupState] = useState<"idle" | "loading" | "found" | "notfound">("idle");
-  const [branchData, setBranchData] = useState<LookupResult | null>(null);
+  const [lookupState, setLookupState] = useState<"idle" | "loading" | "found" | "notfound">(initialState.lookupState || "idle");
+  const [branchData, setBranchData] = useState<LookupResult | null>(initialState.branchData || null);
+  const [networkError, setNetworkError] = useState(initialState.networkError || "");
 
   // Step 2 State
   const form2 = useForm({
     resolver: zodResolver(step2Schema),
-    defaultValues: { firstName: "", lastName: "", email: "" },
+    defaultValues: initialState.form2 || { firstName: "", lastName: "", email: "" },
     mode: "onBlur"
   });
-  const [otpState, setOtpState] = useState<OtpState | null>(null);
-  const [otpInput, setOtpInput] = useState("");
-  const [otpError, setOtpError] = useState("");
+  // Inject initial errors for dev scenarios
+  useEffect(() => {
+    if (initialState.form2Errors) {
+      Object.entries(initialState.form2Errors).forEach(([field, msg]) => {
+        form2.setError(field as Parameters<typeof form2.setError>[0], { type: "manual", message: msg });
+      });
+    }
+  }, [form2, initialState.form2Errors]);
+
+  const [otpState, setOtpState] = useState<OtpState | null>(initialState.otpState || null);
+  const [otpInput, setOtpInput] = useState(initialState.otpInput || "");
+  const [otpError, setOtpError] = useState(initialState.otpError || "");
+  const [duplicateError, setDuplicateError] = useState(initialState.duplicateError || "");
   const [timeRemaining, setTimeRemaining] = useState(0);
 
   const watchedEmail = useWatch({
     control: form2.control,
     name: "email",
-    defaultValue: ""
+    defaultValue: initialState.form2?.email || ""
   });
 
   // Step 3 State
   const form3 = useForm({
     resolver: zodResolver(step3Schema),
-    defaultValues: { consent: false, signature: { type: "drawn" as "drawn"|"typed", value: "" } }
+    defaultValues: initialState.form3 || { consent: false, signature: { type: initialState.sigType || "drawn", value: "" } }
   });
-  const [sigType, setSigType] = useState<"drawn" | "typed">("drawn");
+  useEffect(() => {
+    if (initialState.form3Errors) {
+      Object.entries(initialState.form3Errors).forEach(([field, msg]) => {
+        form3.setError(field as Parameters<typeof form3.setError>[0], { type: "manual", message: msg });
+      });
+    }
+  }, [form3, initialState.form3Errors]);
+  const [sigType, setSigType] = useState<"drawn" | "typed">(initialState.sigType || "drawn");
+
 
   // Step 4 State
   const [reqId, setReqId] = useState("");
@@ -72,15 +114,29 @@ export default function RequestForm() {
       return;
     }
     setLookupState("loading");
+    setNetworkError("");
+    
     // Simulate network delay
     await new Promise(r => setTimeout(r, 500));
     
+    // Inject mock network error for testing if code is exactly 'error' (or via initial state we'll skip this)
+    if (data.branchCode === "error") {
+      setLookupState("idle");
+      setNetworkError("Network error: Could not connect to the server.");
+      return;
+    }
+
     const result = lookupBranch(data.branchCode);
     setBranchData(result);
     setLookupState(result.status);
   });
 
   const triggerOtp = () => {
+    if (isDuplicateRequest(watchedEmail)) {
+      setDuplicateError(`A request for ${watchedEmail} is already pending approval.`);
+      return;
+    }
+    setDuplicateError("");
     setOtpState(sendOtp(Date.now()));
     setOtpError("");
     setOtpInput("");
@@ -110,17 +166,25 @@ export default function RequestForm() {
     <main className="min-h-screen bg-[#F3F4F8] font-sans text-[#111827] flex justify-center md:p-10">
       <div className="w-full max-w-[1040px] bg-white border-0 md:border md:border-[#E5E7EB] md:rounded-[16px] overflow-hidden flex flex-col md:flex-row shadow-sm min-h-[100dvh] md:min-h-[600px]">
         {/* Sidebar */}
-        <aside className="hidden md:flex flex-col w-[34%] bg-[#F7F8FA] border-r border-[#E5E7EB] p-10 gap-12">
+        <aside className="hidden md:flex flex-col w-[34%] bg-[#F7F8FA] border-r border-[#E5E7EB] py-10 px-8 gap-12">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#6D3FE0] flex items-center justify-center">
-              <div className="w-3.5 h-3.5 bg-white rounded flex-none" />
+            <div aria-hidden="true" className="w-10 h-10 rounded-[10px] bg-[#6D3FE0] flex-none flex items-center justify-center">
+              <div className="w-[14px] h-[14px] rounded bg-white" />
             </div>
-            <div>
+            <div className="flex flex-col gap-0.5 min-w-0">
               <div className="font-bold text-[16px] text-[#0F1220]">Line OpenChat Access Request</div>
-              <div className="text-[13px] text-[#4B5563]">For dealer branch coordinators</div>
+              <div className="text-[13px] text-[#6B7280]">For dealer branch coordinators</div>
             </div>
           </div>
           <Stepper currentStep={step} />
+          
+          <div className="mt-auto flex gap-2.5 text-[13px] leading-5 text-[#6B7280]">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[1px]">
+              <path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6L12 3Z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+            <span>Your details are used only to verify eligibility.</span>
+          </div>
         </aside>
         
         {/* Mobile Stepper Header */}
@@ -129,14 +193,28 @@ export default function RequestForm() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6 md:p-10 flex flex-col">
-          <div className="flex-1 flex flex-col gap-6 relative">
+        <div className="flex-1 px-5 py-6 md:pt-7 md:px-14 md:pb-10 flex flex-col min-w-0">
+          <div className="hidden md:flex justify-end items-center gap-1.5 text-[14px] text-[#6B7280] whitespace-nowrap">
+            <span>Need help?</span>
+            <a href="#" className="text-[#6D3FE0] font-semibold no-underline">Contact the team</a>
+          </div>
+          <div className="flex-1 flex flex-col gap-5 relative md:pt-7">
             {/* Step 1 */}
             {step === 1 && (
-              <form onSubmit={handleStep1} className="space-y-6 flex-1 flex flex-col">
-                <div>
-                  <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold tracking-tight text-[#0F1220] outline-none">Enter your branch code</h1>
-                  <p className="text-[#4B5563] mt-1">Used to verify your eligibility to join the Line OpenChat group.</p>
+              <form onSubmit={handleStep1} className="flex-1 flex flex-col gap-6">
+                <div className="flex flex-col gap-1.5">
+                  <h1 ref={headingRef} tabIndex={-1} className="text-[22px] md:text-[28px] leading-[1.25] font-bold tracking-[-0.01em] text-[#0F1220] m-0 outline-none">Enter your branch code</h1>
+                  <p className="m-0 text-[16px] leading-[24px] text-[#6B7280]">Used to verify your eligibility to join the Line OpenChat group.</p>
+                </div>
+
+                <div className="relative flex gap-3 p-4 rounded-xl bg-[#EDE9FE]">
+                  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6D3FE0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[2px]">
+                    <circle cx="12" cy="12" r="9.5"></circle><path d="M12 11v5.5M12 7.5h.01"></path>
+                  </svg>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <div className="text-[15px] font-bold text-[#4C1D95]">Note</div>
+                    <div className="text-[15px] leading-[23px] text-[#2E1065] text-pretty">Use this form to request access to the Line OpenChat for announcements and team coordination. Your details are used only to verify eligibility under company policy.</div>
+                  </div>
                 </div>
                 
                 <input type="text" tabIndex={-1} aria-hidden="true" className="sr-only" {...form1.register("honeypot")} />
@@ -154,6 +232,7 @@ export default function RequestForm() {
                 <div aria-live="polite">
                   {lookupState === "loading" && <div className="text-[#4B5563]">Verifying…</div>}
                   {lookupState === "notfound" && <div className="text-[#B91C1C]">Error: We couldn&apos;t find a branch with that code.</div>}
+                  {networkError && <div className="text-[#B91C1C]" role="alert">{networkError}</div>}
                   {lookupState === "found" && branchData?.status === "found" && (
                     <div className="bg-[#FAFAFB] border border-[#E5E7EB] p-4 rounded-[12px] flex flex-col gap-1">
                       <span className="text-[13px] text-[#4B5563]">Branch found</span>
@@ -163,7 +242,9 @@ export default function RequestForm() {
                 </div>
 
                 <div className="mt-auto pt-10 flex items-center justify-end">
-                  {lookupState === "found" ? (
+                  {networkError ? (
+                    <Button type="submit" isLoading={lookupState === "loading"}>Retry</Button>
+                  ) : lookupState === "found" ? (
                     <Button type="button" onClick={() => setStep(2)}>Continue</Button>
                   ) : (
                     <Button type="submit" isLoading={lookupState === "loading"}>Verify branch code</Button>
@@ -174,27 +255,77 @@ export default function RequestForm() {
             
             {/* Step 2 */}
             {step === 2 && (
-              <form onSubmit={handleStep2} className="space-y-6 flex-1 flex flex-col">
-                <div>
+              <form onSubmit={handleStep2} className="space-y-[28px] flex-1 flex flex-col">
+                <div className="flex flex-col gap-[6px]">
                   <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold tracking-tight text-[#0F1220] outline-none">Your details</h1>
-                  <p className="text-[#4B5563] mt-1">Tell us who should receive the invite.</p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FloatField label="First name" error={form2.formState.errors.firstName?.message} {...form2.register("firstName")} />
-                  <FloatField label="Last name" error={form2.formState.errors.lastName?.message} {...form2.register("lastName")} />
+                  <p className="text-[#6B7280] text-[16px] leading-[24px]">Tell us who should receive the invite.</p>
                 </div>
 
-                <FloatField 
-                  label="Email address" 
-                  icon="mail"
-                  error={form2.formState.errors.email?.message}
-                  warning={branchData?.status === "found" && isDomainWarning(watchedEmail, branchData.dealerDomains) ? `This email isn't on ${branchData.dealerDomains[0]}, your dealer's domain. Approval may take longer.` : undefined}
-                  {...form2.register("email")}
-                />
+                <div className="flex flex-col gap-[10px]">
+                  <div className="flex items-center justify-between gap-[12px] flex-wrap">
+                    <h2 className="m-0 text-[14px] font-semibold text-[#4B5563]">Branch information</h2>
+                    <button type="button" onClick={() => setStep(1)} className="inline-flex items-center gap-[6px] min-h-[36px] text-[14px] font-semibold text-[#6D3FE0] decoration-transparent whitespace-nowrap bg-transparent border-0 cursor-pointer">
+                      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4Z"></path><path d="m13.5 6.5 4 4"></path></svg>
+                      <span>Change branch code</span>
+                    </button>
+                  </div>
+                  <div className="relative bg-[#F3F4F6] border border-[#E5E7EB] rounded-[12px] p-[16px_20px] flex flex-col gap-[14px]">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-[14px_24px]">
+                      <div className="flex flex-col gap-[2px] min-w-0">
+                        <span className="text-[13px] text-[#6B7280]">Dealer name</span>
+                        <span className="text-[16px] leading-[24px] font-semibold text-[#111827]">{branchData?.status === "found" ? branchData.dealerName : ""}</span>
+                      </div>
+                      <div className="flex flex-col gap-[2px] min-w-0">
+                        <span className="text-[13px] text-[#6B7280]">Branch code</span>
+                        <span className="font-mono text-[15px] leading-[24px] font-semibold text-[#111827] tracking-[.04em]">{branchData?.status === "found" ? form1.getValues("branchCode") : ""}</span>
+                      </div>
+                      <div className="flex flex-col gap-[2px] min-w-0">
+                        <span className="text-[13px] text-[#6B7280]">Branch name</span>
+                        <span className="text-[16px] leading-[24px] font-semibold text-[#111827]">{branchData?.status === "found" ? branchData.branchName : ""}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-[6px] text-[13px] text-[#6B7280] border-t border-[#E5E7EB] pt-[12px]">
+                      <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+                      <span>Auto-filled from your branch code</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-[20px]">
+                  <h2 className="m-0 text-[14px] font-semibold text-[#4B5563]">Requester</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px_16px]">
+                    <FloatField label="First name" icon="user" error={form2.formState.errors.firstName?.message} {...form2.register("firstName")} />
+                    <FloatField label="Last name" error={form2.formState.errors.lastName?.message} {...form2.register("lastName")} />
+                  </div>
+
+                  <FloatField 
+                    label="Email address" 
+                    icon="mail"
+                    error={form2.formState.errors.email?.message}
+                    helper="We'll send the OpenChat invite link to this address. Use an email you check daily."
+                    warning={branchData?.status === "found" && isDomainWarning(watchedEmail, branchData.dealerDomains) ? `This email isn't on ${branchData.dealerDomains[0]}, your dealer's domain. Approval may take longer.` : undefined}
+                    {...form2.register("email")}
+                  />
+                </div>
                 
                 {/* OTP Section */}
                 <div className="border-t border-[#E5E7EB] pt-6 space-y-4">
+                  {duplicateError && (
+                    <div role="alert" className="flex gap-[12px] p-[14px_16px] rounded-[12px] bg-[#FEE2E2]">
+                      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none mt-[2px]"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg>
+                      <div className="flex flex-col gap-[8px] min-w-0 text-[15px] leading-[22px] text-[#111827]">
+                        <div className="font-bold">A request for this email is already pending</div>
+                        <div>{duplicateError}</div>
+                        <div className="flex flex-wrap gap-[8px_16px] items-center">
+                          <button type="button" onClick={() => {
+                            form2.setValue('email', '');
+                            setDuplicateError("");
+                          }} className="whitespace-nowrap min-h-[40px] px-[14px] rounded-[10px] border border-[#6D3FE0] bg-[#FFFFFF] text-[#6D3FE0] font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-[rgba(109,63,224,.3)] hover:bg-[#F5F3FF]">Use a different email</button>
+                          <a href="#" className="text-[#6D3FE0] font-semibold text-[14px] whitespace-nowrap">Contact the team</a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {!otpState ? (
                     <Button type="button" variant="secondary" onClick={triggerOtp}>Verify email</Button>
                   ) : otpState.isVerified ? (
@@ -216,19 +347,22 @@ export default function RequestForm() {
                             value={otpInput}
                             onChange={e => setOtpInput(e.target.value)}
                           />
+                          {!otpError && otpState.attempts > 0 && otpState.attempts < OTP_RULES.MAX_ATTEMPTS && (
+                            <div className="text-sm mt-1 text-[#4B5563]">{OTP_RULES.MAX_ATTEMPTS - otpState.attempts} attempts remaining</div>
+                          )}
                         </div>
                         <Button type="button" variant="secondary" onClick={handleVerifyOtp}>Verify code</Button>
                       </div>
                       <Button type="button" variant="ghost" disabled={timeRemaining > 0} onClick={triggerOtp}>
-                        {timeRemaining > 0 ? `Resend code in ${timeRemaining}s` : "Resend code"}
+                        {timeRemaining > 0 ? `Resend code in ${timeRemaining}s` : "Send a new code"}
                       </Button>
                     </div>
                   )}
                 </div>
 
-                <div className="mt-auto pt-10 flex items-center justify-between">
-                  <Button type="button" variant="secondary" onClick={() => setStep(1)}>Back</Button>
-                  <Button type="submit" disabled={!otpState?.isVerified}>Continue</Button>
+                <div className="mt-[40px] flex items-center justify-between gap-[16px]">
+                  <Button type="button" variant="secondary" onClick={() => setStep(1)} className="min-w-[112px]">Back</Button>
+                  <Button type="submit" disabled={!otpState?.isVerified} className="min-w-[140px]">Continue</Button>
                 </div>
               </form>
             )}
@@ -243,26 +377,30 @@ export default function RequestForm() {
 
                 <div className="bg-[#FAFAFB] border border-[#E5E7EB] p-4 rounded-[12px] h-[150px] overflow-y-auto text-sm text-[#4B5563]">
                   v0-draft [Legal to confirm]<br/><br/>
-                  By proceeding, you consent to the collection and use of your personal data...
+                  By proceeding, you consent to the collection and use of your personal data…
                 </div>
 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" className="mt-1 w-4 h-4" {...form3.register("consent")} />
-                  <span className="text-[15px] font-medium">I have read and agree to the terms and conditions.</span>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="pt-0.5 flex-none">
+                    <input type="checkbox" className="w-[22px] h-[22px] accent-[#6D3FE0] rounded cursor-pointer" {...form3.register("consent")} />
+                  </div>
+                  <span className="text-[15px] leading-[22px] text-[#4B5563]">
+                    I have read and agree to the terms and conditions. <a href="#" className="text-[#6D3FE0] font-semibold hover:underline">[Legal to confirm] Privacy Policy</a>.
+                  </span>
                 </label>
                 {form3.formState.errors.consent && <div className="text-[#B91C1C] text-sm">{form3.formState.errors.consent.message}</div>}
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Signature</span>
-                    <Button type="button" variant="ghost" onClick={() => {
+                    <button type="button" className="text-[14px] font-semibold text-[#6D3FE0] hover:underline focus:outline-none focus:ring-2 focus:ring-[rgba(109,63,224,.3)] rounded px-1" onClick={() => {
                       const newMode = toggleSignatureMode(sigType);
                       setSigType(newMode);
                       form3.setValue("signature.value", "");
                       form3.setValue("signature.type", newMode);
                     }}>
                       {sigType === "drawn" ? "Type your name instead" : "Draw your signature instead"}
-                    </Button>
+                    </button>
                   </div>
                   
                   {sigType === "drawn" ? (
@@ -273,21 +411,53 @@ export default function RequestForm() {
                   {form3.formState.errors.signature?.value && <div className="text-[#B91C1C] text-sm">{form3.formState.errors.signature.value.message}</div>}
                 </div>
 
-                <div className="mt-auto pt-10 flex items-center justify-between">
-                  <Button type="button" variant="secondary" onClick={() => setStep(2)}>Back</Button>
-                  <Button type="submit">Submit request</Button>
+                <div className="mt-[40px] flex items-center justify-between gap-[16px]">
+                  <Button type="button" variant="secondary" onClick={() => setStep(2)} className="min-w-[112px]">Back</Button>
+                  <Button type="submit" className="min-w-[140px]">Submit request</Button>
                 </div>
               </form>
             )}
             
             {/* Step 4 */}
             {step === 4 && (
-              <div className="flex flex-col items-center justify-center text-center space-y-4 pt-10 flex-1">
-                <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-[#0F1220] outline-none">Request submitted</h1>
-                <p className="text-[#4B5563] max-w-md">We&apos;ll review your details and email the Line OpenChat invite link to {form2.getValues().email}.</p>
-                <div className="bg-[#FAFAFB] px-4 py-2 rounded-lg text-sm text-[#6B7280]">
-                  Request ID: <span className="font-mono font-medium">{reqId}</span>
+              <div role="status" className="flex flex-col items-center text-center gap-[20px] pb-[24px] pt-[16px] flex-1">
+                <div className="w-[72px] h-[72px] rounded-full bg-[#DCF5E7] flex items-center justify-center">
+                  <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2E7D5B" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>
                 </div>
+                <h1 ref={headingRef} tabIndex={-1} className="m-0 text-2xl font-bold text-[#0F1220] leading-tight outline-none">Request submitted</h1>
+                <div className="flex flex-wrap justify-center items-center gap-[8px]">
+                  <span className="text-[14px] text-[#6B7280]">Request ID</span>
+                  <span className="font-mono text-[14px] font-semibold px-[12px] py-[4px] rounded-full bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] whitespace-nowrap">{reqId}</span>
+                  <span className="inline-flex items-center gap-[6px] text-[13px] font-semibold px-[12px] py-[5px] rounded-full bg-[#FEF3C7] text-[#92400E] whitespace-nowrap">
+                    <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+                    <span>Pending review</span>
+                  </span>
+                </div>
+                <p className="m-0 max-w-[440px] text-[16px] leading-[26px] text-[#374151] break-words">We&apos;ll review your details and email the Line OpenChat invite link to <span className="font-semibold text-[#111827]">{form2.getValues().email}</span>.</p>
+                
+                <ol aria-label="What happens next" className="list-none m-0 flex items-start justify-center w-full max-w-[440px] p-[20px_0_4px]">
+                  <li className="w-[96px] flex-none flex flex-col items-center gap-[8px]">
+                    <div className="w-[28px] h-[28px] rounded-full bg-[#DCF5E7] text-[#2E7D5B] flex items-center justify-center">
+                      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>
+                    </div>
+                    <span className="text-[14px] font-semibold text-[#111827]">Submitted</span>
+                  </li>
+                  <li aria-hidden="true" className="flex-1 h-[2px] bg-[#2E7D5B] mt-[13px] rounded-[2px]"></li>
+                  <li aria-current="step" className="w-[96px] flex-none flex flex-col items-center gap-[8px]">
+                    <div className="w-[28px] h-[28px] rounded-full bg-[#FEF3C7] text-[#B45309] flex items-center justify-center">
+                      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+                    </div>
+                    <span className="text-[14px] font-semibold text-[#92400E]">Under review</span>
+                  </li>
+                  <li aria-hidden="true" className="flex-1 h-[2px] bg-[#E5E7EB] mt-[13px] rounded-[2px]"></li>
+                  <li className="w-[96px] flex-none flex flex-col items-center gap-[8px]">
+                    <div className="w-[28px] h-[28px] rounded-full bg-[#F3F4F6] text-[#6B7280] flex items-center justify-center">
+                      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3.5 6.5 8.5 6 8.5-6"></path></svg>
+                    </div>
+                    <span className="text-[14px] font-medium text-[#4B5563]">Invite sent</span>
+                  </li>
+                </ol>
+                <button type="button" onClick={() => window.location.reload()} className="whitespace-nowrap min-h-[44px] px-[16px] border-0 bg-transparent text-[#6D3FE0] font-semibold cursor-pointer rounded-[10px] hover:bg-[#F5F3FF] focus:outline-none focus:ring-2 focus:ring-[rgba(109,63,224,.3)] text-[15px]">Submit another request</button>
               </div>
             )}
           </div>

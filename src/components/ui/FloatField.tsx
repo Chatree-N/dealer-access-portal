@@ -34,128 +34,182 @@ export const FloatField = React.forwardRef<HTMLInputElement, FloatFieldProps>(
       className = "",
       id,
       value,
+      onChange,
+      onBlur,
+      onFocus,
       ...props
     },
-    ref
+    forwardedRef
   ) => {
     const generatedId = React.useId();
-    const inputId = id || generatedId;
+    const fid = id || generatedId;
+    const hid = `${fid}-h`;
     const [isFocused, setIsFocused] = React.useState(forceFocus || false);
     
-    // Controlled or uncontrolled value state to handle floating label
-    const hasValue = value !== undefined && value !== "";
-
-    const isError = !!error;
-    const isWarning = !!warning && !isError;
-    const isSuccess = !!success && !isError && !isWarning;
+    const internalInputRef = React.useRef<HTMLInputElement>(null);
+    const internalSelectRef = React.useRef<HTMLSelectElement>(null);
     
-    let borderColor = "border-[#E5E7EB]";
-    let ringColor = "focus-within:ring-[rgba(109,63,224,.3)]";
-    if (isError) {
-      borderColor = "border-[#DC3E3E]";
-      ringColor = "focus-within:ring-[rgba(220,62,62,.3)]";
-    } else if (isWarning) {
-      borderColor = "border-[#B45309]";
-      ringColor = "focus-within:ring-[#FEF3C7]";
-    } else if (isSuccess) {
-      borderColor = "border-[#2E7D5B]";
-      ringColor = "focus-within:ring-[#DCF5E7]";
-    } else if (isFocused) {
-      borderColor = "border-[#6D3FE0]";
-    }
+    const inputRef = (node: HTMLInputElement) => {
+      internalInputRef.current = node;
+      if (typeof forwardedRef === 'function') forwardedRef(node);
+      else if (forwardedRef) forwardedRef.current = node;
+    };
+    
+    const isError = !!error && !loading;
+    const isWarning = !!warning && !isError && !loading;
+    const isSuccess = !!success && !isError && !loading;
+    const isLocked = !!locked;
+    const isDisabled = !!disabled;
+    const showFocus = !isLocked && !isDisabled && (isFocused || !!forceFocus);
+    
+    const bw = showFocus || isError ? "1.5px" : "1px";
+    const bc = isError ? "#B91C1C" : showFocus ? "#6D3FE0" : isWarning ? "#D9A23B" : isSuccess ? "#2E7D5B" : (isLocked || isDisabled) ? "#E5E7EB" : "#B8BEC9";
+    const bg = isLocked ? "#F3F4F6" : isDisabled ? "#F9FAFB" : "#FFFFFF";
+    const ring = showFocus ? (isError ? "0 0 0 2px rgba(220,62,62,.25)" : "0 0 0 2px rgba(109,63,224,.3)") : "none";
+    const lc = isError ? "#B91C1C" : showFocus ? "#6D3FE0" : isDisabled ? "#9CA3AF" : isLocked ? "#6B7280" : "#374151";
+    const tc = isDisabled ? "#9CA3AF" : isLocked ? "#4B5563" : "#111827";
+    const ic = isError ? "#B91C1C" : showFocus ? "#6D3FE0" : isDisabled ? "#C5CAD3" : "#6B7280";
+    const cursor = isLocked || isDisabled ? "default" : "text";
+    
+    const hasValue = value !== undefined && value !== "";
+    const selColor = hasValue ? "#111827" : "#6B7280";
+    const monoClass = mono ? "font-['JetBrains_Mono',ui-monospace,monospace] tracking-[0.04em]" : "font-sans";
+    
+    const helperText = isError ? error : loading ? helper : isWarning ? warning : isSuccess ? success : (helper ?? (isLocked ? 'Auto-filled from your branch code' : ''));
+    const hasHelper = !!helperText;
+    const hc = isError ? "#B91C1C" : isWarning ? "#B45309" : isSuccess ? "#2E7D5B" : "#6B7280";
 
-    const bgClass = locked || disabled ? "bg-[#F7F8FA] text-[#6B7280]" : "bg-white";
-    const monoClass = mono ? "font-mono tracking-widest text-lg text-center" : "";
-    const activeLabel = isFocused || hasValue || !!placeholder || !!options;
+    const handleFocusInput = () => {
+      const el = internalInputRef.current || internalSelectRef.current;
+      if (el && !isLocked && !isDisabled) el.focus();
+    };
+
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setIsFocused(true);
+      if (onFocus) onFocus(e as unknown as React.FocusEvent<HTMLInputElement>);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setIsFocused(false);
+      if (onBlur) onBlur(e as unknown as React.FocusEvent<HTMLInputElement>);
+    };
 
     return (
-      <div className={`relative flex flex-col gap-1 w-full ${className}`}>
-        <div 
-          className={`relative flex items-center border ${borderColor} rounded-[10px] px-3.5 ${bgClass} transition-all focus-within:ring-2 ${ringColor}`}
+      <div className={`flex flex-col gap-[6px] min-w-0 font-sans ${className}`}>
+        <fieldset 
+          onClick={handleFocusInput}
+          style={{
+            margin: 0, padding: "0 14px", minWidth: 0, borderStyle: "solid", borderWidth: bw, borderColor: bc, 
+            borderRadius: "10px", background: bg, boxShadow: ring, transition: "border-color .15s ease, box-shadow .15s ease",
+            display: "flex", alignItems: "center", gap: "10px", cursor
+          }}
         >
-          {icon && (
-            <div className="pl-3 flex items-center justify-center text-[#9CA3AF]">
-              {/* Dummy icon placeholder */}
-              <span className="w-5 h-5 flex items-center justify-center">
-                {icon === "mail" && "@"}
-                {icon === "search" && "Q"}
-                {icon === "user" && "U"}
-                {icon === "key" && "*"}
-              </span>
-            </div>
+          <legend style={{
+            padding: "0 6px", marginLeft: "-6px", fontSize: "13px", lineHeight: "16px", fontWeight: 500,
+            color: lc, whiteSpace: "nowrap", transition: "color .15s ease"
+          }}>
+            <label htmlFor={fid} style={{ cursor: "inherit" }}>{label}</label>
+            {required && <span aria-hidden="true" style={{ color: "#B91C1C", marginLeft: "2px" }}>*</span>}
+          </legend>
+
+          {icon === "search" && (
+            <span aria-hidden="true" style={{ display: "flex", flex: "none", marginTop: "-8px", color: ic }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            </span>
+          )}
+          {icon === "user" && (
+            <span aria-hidden="true" style={{ display: "flex", flex: "none", marginTop: "-8px", color: ic }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>
+            </span>
+          )}
+          {icon === "mail" && (
+            <span aria-hidden="true" style={{ display: "flex", flex: "none", marginTop: "-8px", color: ic }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3.5 6.5 8.5 6 8.5-6"></path></svg>
+            </span>
           )}
 
-          <div className="relative w-full flex-1">
-            <label
-              htmlFor={inputId}
-              className={`absolute left-0 transition-all duration-200 pointer-events-none z-10 
-                ${activeLabel 
-                  ? "top-1 text-[13px] text-[#6B7280]" 
-                  : "top-1/2 -translate-y-1/2 text-[16px] text-[#6B7280]"
-                } ${required ? "after:content-['*'] after:ml-0.5 after:text-[#B91C1C]" : ""}
-              `}
-            >
-              {label}
-            </label>
-
-            {options ? (
+          {options ? (
+            <>
               <select
-                id={inputId}
-                disabled={disabled || locked}
-                className={`w-full bg-transparent outline-none pt-6 pb-2 text-[16px] text-[#0F1220] min-h-[48px] appearance-none ${monoClass}`}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
+                ref={internalSelectRef}
+                id={fid}
                 value={value}
-                aria-invalid={isError}
+                onChange={onChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                disabled={isDisabled || isLocked}
+                aria-describedby={hasHelper ? hid : undefined}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 {...(props as any)}
+                style={{
+                  flex: 1, minWidth: 0, appearance: "none", border: 0, outline: 0, background: "transparent",
+                  fontFamily: "inherit", fontSize: "16px", lineHeight: "24px", padding: "4px 0 12px", margin: 0,
+                  color: selColor, cursor: "pointer"
+                }}
               >
-                {!value && <option value="" disabled>{placeholder}</option>}
-                {options.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
+                <option value="" disabled>{placeholder || " "}</option>
+                {options.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
-            ) : (
-              <input
-                id={inputId}
-                ref={ref}
-                disabled={disabled || locked}
-                readOnly={locked}
-                placeholder={placeholder}
-                value={value}
-                className={`w-full bg-transparent outline-none pt-6 pb-2 text-[16px] text-[#0F1220] min-h-[48px] ${monoClass}`}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                aria-invalid={isError}
-                {...props}
-              />
-            )}
-          </div>
-          
-          {loading && (
-            <div className="pr-3 flex items-center justify-center text-[#6B7280]">
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </div>
+              <span aria-hidden="true" style={{ display: "flex", flex: "none", marginTop: "-8px", color: ic, pointerEvents: "none" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+              </span>
+            </>
+          ) : (
+            <input
+              ref={inputRef}
+              id={fid}
+              value={value}
+              onChange={onChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              placeholder={placeholder || ""}
+              readOnly={isLocked}
+              disabled={isDisabled}
+              aria-invalid={isError ? "true" : "false"}
+              aria-describedby={hasHelper ? hid : undefined}
+              aria-required={required ? "true" : "false"}
+              {...props}
+              className={`placeholder:text-[#6B7280] placeholder:italic placeholder:font-normal ${monoClass}`}
+              style={{
+                flex: 1, minWidth: 0, border: 0, outline: 0, background: "transparent", fontSize: "16px", lineHeight: "24px",
+                padding: "4px 0 12px", margin: 0, color: tc, cursor, textOverflow: "ellipsis"
+              }}
+            />
           )}
-        </div>
 
-        {/* Helper / Error Message */}
-        <div className="min-h-[20px] px-1 text-[13px]" aria-live="polite">
-          {isError ? (
-            <span className="text-[#B91C1C] flex items-center gap-1">
-              <span className="font-bold">Error:</span> {error}
+          {loading && (
+            <span style={{ display: "flex", flex: "none", marginTop: "-8px" }}>
+              <span aria-label="Loading" className="animate-spin" style={{ width: 16, height: 16, borderRadius: 999, border: "2px solid #DDD6FE", borderTopColor: "#6D3FE0", display: "inline-block", boxSizing: "border-box" }} />
             </span>
-          ) : isWarning ? (
-            <span className="text-[#B45309]">{warning}</span>
-          ) : isSuccess ? (
-            <span className="text-[#2E7D5B]">{success}</span>
-          ) : helper ? (
-            <span className="text-[#6B7280]">{helper}</span>
-          ) : null}
-        </div>
+          )}
+          {isLocked && (
+            <span aria-hidden="true" style={{ display: "flex", flex: "none", marginTop: "-8px", color: "#6B7280" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+            </span>
+          )}
+          {isSuccess && (
+            <span aria-hidden="true" style={{ display: "flex", flex: "none", marginTop: "-8px", color: "#2E7D5B" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9.5"></circle><path d="m8 12.5 2.8 2.8L16 9.5"></path></svg>
+            </span>
+          )}
+          {isError && (
+            <span aria-hidden="true" style={{ display: "flex", flex: "none", marginTop: "-8px", color: "#DC3E3E" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 7.5v5.5M12 16.5h.01"></path></svg>
+            </span>
+          )}
+        </fieldset>
+
+        {hasHelper && (
+          <div id={hid} role={isError ? "alert" : "note"} style={{ display: "flex", gap: "6px", alignItems: "flex-start", fontSize: "13px", lineHeight: "18px", color: hc, padding: "0 2px", textWrap: "pretty" }}>
+            {isLocked && !isError && (
+              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none", marginTop: "2px" }}><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+            )}
+            {isWarning && (
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none", marginTop: "2px" }}><path d="M12 3 2.5 20h19L12 3Z"></path><path d="M12 10v4.5M12 17.5h.01"></path></svg>
+            )}
+            <span>{isError && <span style={{ fontWeight: 600 }}>Error: </span>}{helperText}</span>
+          </div>
+        )}
       </div>
     );
   }

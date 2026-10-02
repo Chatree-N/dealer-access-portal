@@ -57,7 +57,7 @@ export default function DevComponentsPage() {
             <FloatField 
               label="Loading state" 
               loading 
-              value="Checking..." 
+              value="Checking…" 
               onChange={() => {}} 
             />
             <FloatField 

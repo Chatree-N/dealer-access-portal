@@ -115,4 +115,30 @@ test.describe('Phase 2 Form - Mobile', () => {
 
     await expect(page.getByText('Step 2 of 3').last()).toBeVisible();
   });
+
+  test('floating labels do not overlap input text when blurred (uncontrolled)', async ({ page }) => {
+    await page.goto('/');
+    
+    await page.getByLabel(/Branch code/).fill('1234');
+    await page.getByRole('button', { name: 'Verify branch code' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+
+    const firstNameInput = page.getByLabel(/First name/);
+    const labelId = await firstNameInput.getAttribute('id');
+    const label = page.locator(`label[for="${labelId}"]`);
+    
+    // Get label position when empty (not floated)
+    const labelBboxEmpty = await label.boundingBox();
+    
+    // Type into it and blur
+    await firstNameInput.focus();
+    await firstNameInput.pressSequentially('Happy', { delay: 10 });
+    await page.getByRole('heading', { name: 'Your details' }).click(); // click away to blur
+    
+    // Get label position when filled and blurred
+    const labelBboxFilled = await label.boundingBox();
+    
+    // Assert that the label is higher up than it was when empty
+    expect(labelBboxFilled!.y).toBeLessThan(labelBboxEmpty!.y - 5);
+  });
 });

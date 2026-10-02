@@ -54,3 +54,7 @@ This file tracks significant technical and architectural decisions made througho
 ## 12. Mock Logic updates (Phase 2A)
 - **Decision:** Phase 2 mock lookup runs client-side; Phase 3 moves lookup and domain check to the server and returns only masked data.
 - **Rule:** The masking rule is "First word + space + first letter of the second word + …", returning standard generic responses for inactive or invalid branches.
+
+## 13. High-Fidelity Design Implementation (Phase 2B)
+- **Decision:** The application UI was updated to strictly match the design specifications (`design/RequestForm2.dc.html`, `design/FloatField2.dc.html`).
+- **Rationale:** Ensure the application accurately reflects the approved design tokens, spacing, typography, and specific component behaviors (e.g., fieldset/legend for floating labels instead of CSS-only placeholder hacks) as mandated by the "design is the source of truth" requirement. The only preserved deviations are wording sanitization, the prior ADR 11 accessibility fixes, and the use of `#B91C1C` for error text/borders (deviating from `#DC3E3E` in the design) to satisfy WCAG AA contrast requirements.
