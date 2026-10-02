@@ -372,8 +372,8 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                         <h2 className="m-0 text-[22px] md:text-[28px] leading-[1.25] font-bold text-[#0F1220] tracking-[-0.01em]">Verify your email</h2>
                         <p className="m-0 text-[16px] leading-[24px] text-[#6B7280] break-words">Enter the 6-digit code we sent to <span className="text-[#111827] font-semibold">{watchedEmail}</span>.</p>
                       </div>
-                      <div className="relative max-w-[360px] flex gap-4 items-start">
-                        <div className="flex-1">
+                      <div className="relative flex gap-[16px] items-start">
+                        <div className="flex-1 min-w-0 max-w-[360px]">
                           <FloatField 
                             label="Verification code" 
                             required={true}
@@ -389,15 +389,15 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                             onChange={e => setOtpInput(e.target.value)}
                           />
                         </div>
-                        <Button type="button" variant="secondary" onClick={handleVerifyOtp}>Verify code</Button>
+                        <Button type="button" variant="secondary" onClick={handleVerifyOtp} className="whitespace-nowrap flex-none mt-[4px]">Verify code</Button>
                       </div>
                       <div aria-live="polite" className="flex items-center gap-[8px] flex-wrap text-[14px] leading-[20px] text-[#6B7280]">
                         {timeRemaining > 0 ? (
-                          <span>Didn&apos;t get it? Resend code in <span className="font-mono text-[#111827] font-semibold">{Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}</span></span>
+                          <span>Didn&apos;t get it? Resend code in <span className="font-mono text-[#111827] font-semibold">{timeRemaining}s</span></span>
                         ) : (
                           <>
                             <span>Didn&apos;t get it?</span>
-                            <button type="button" onClick={triggerOtp} className="whitespace-nowrap min-h-[36px] px-[10px] rounded-[8px] border-0 bg-transparent text-[#6D3FE0] font-[inherit] text-[14px] font-semibold cursor-pointer hover:bg-[#F5F3FF] focus:outline-none focus:ring-2 focus:ring-[rgba(109,63,224,.3)]">Send a new code</button>
+                            <button type="button" onClick={triggerOtp} className="whitespace-nowrap min-h-[36px] px-[10px] rounded-[8px] border-0 bg-transparent text-[#6D3FE0] font-[inherit] text-[14px] font-semibold cursor-pointer hover:bg-[#F5F3FF] focus:outline-none focus:ring-2 focus:ring-[rgba(109,63,224,.3)]">Resend code</button>
                           </>
                         )}
                       </div>

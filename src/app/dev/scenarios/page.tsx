@@ -78,7 +78,8 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       lookupState: "found",
       branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
-      otpState: sendOtp(now)
+      // eslint-disable-next-line react-hooks/purity
+      otpState: sendOtp(Date.now())
     };
   } else if (s === "verify-wrong") {
     const otpStart = sendOtp(now);

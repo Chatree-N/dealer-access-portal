@@ -42,21 +42,9 @@ pnpm-debug.log*
 *.pem
 *.key
 
-# Local runtime data
-.data/
-pgdata/
-mailpit-data/
-
-# Testing
-playwright-report/
-test-results/
-blob-report/
-
-# Editor and keys
-*.key
-.idea/
-.vscode/*
-!.vscode/extensions.json
-
-# Environments
-!.env.example
+# AI tooling / scratch (local only)
+.gemini/
+.agent/
+.claude/settings.local.json
+scratch/
+debug-*.png

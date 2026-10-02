@@ -63,7 +63,7 @@ test.describe('Phase 2C: Dev Scenarios', () => {
         await expect(page.getByText('A request for this email is already pending')).toBeVisible();
       } else if (s === "verify-sent") {
         await expect(page.getByText('Enter the 6-digit code')).toBeVisible();
-        await expect(page.getByText('Send a new code')).toBeVisible();
+        await expect(page.getByText(/Resend code in/)).toBeVisible();
       } else if (s === "verify-wrong") {
         await expect(page.getByText("That code doesn't match.")).toBeVisible();
       } else if (s === "verify-ok") {
@@ -76,7 +76,7 @@ test.describe('Phase 2C: Dev Scenarios', () => {
         await expect(page.getByText('Signature is required')).toBeVisible();
       } else if (s === "expired") {
         await expect(page.getByText('Expired or too many attempts.')).toBeVisible();
-        await expect(page.getByText('Send a new code')).toBeVisible();
+        await expect(page.getByText('Resend code')).toBeVisible();
       }
 
       // Desktop screenshot

@@ -55,6 +55,12 @@ This file tracks significant technical and architectural decisions made througho
 - **Decision:** Phase 2 mock lookup runs client-side; Phase 3 moves lookup and domain check to the server and returns only masked data.
 - **Rule:** The masking rule is "First word + space + first letter of the second word + …", returning standard generic responses for inactive or invalid branches.
 
-## 13. High-Fidelity Design Implementation (Phase 2B)
+## 13. High-Fidelity Design Implementation (Phase 2B & 2C)
 - **Decision:** The application UI was updated to strictly match the design specifications (`design/RequestForm2.dc.html`, `design/FloatField2.dc.html`).
-- **Rationale:** Ensure the application accurately reflects the approved design tokens, spacing, typography, and specific component behaviors (e.g., fieldset/legend for floating labels instead of CSS-only placeholder hacks) as mandated by the "design is the source of truth" requirement. The only preserved deviations are wording sanitization, the prior ADR 11 accessibility fixes, and the use of `#B91C1C` for error text/borders (deviating from `#DC3E3E` in the design) to satisfy WCAG AA contrast requirements.
+- **Rationale:** Ensure the application accurately reflects the approved design tokens, spacing, typography, and specific component behaviors.
+- **Approved Deviations & Standards:**
+  - Wording is sanitized for real brands/people, and we exclusively use fictional `*.example` domains (e.g., `jane@example.com`, `lotustelecom.example`) for all fixtures, scenarios, and tests.
+  - The use of `#B91C1C` for error text/borders (deviating from `#DC3E3E` in the design) is strictly enforced to satisfy WCAG AA contrast requirements.
+  - The Stepper component exactly mirrors the design (e.g. pale green fill `#DCF5E7` with dark green `#2E7D5B` checkmark for completed steps, and violet connectors).
+  - The Branch Information card layout, "Next" button label, and required field asterisks were brought to 1:1 parity with the design.
+  - The OTP Resend flow perfectly matches the design layout and cooldown text ("Resend code in Ns").
