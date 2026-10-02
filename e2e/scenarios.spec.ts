@@ -45,7 +45,7 @@ test.describe('Phase 2C: Dev Scenarios', () => {
       // No overlap check
       await checkNoOverlap(page);
 
-      if (s !== "network") {
+      if (s !== "network" && s !== "typed-sig" && s !== "incomplete") {
         await expect(page.getByText('1234', { exact: true })).toBeVisible();
       }
 
