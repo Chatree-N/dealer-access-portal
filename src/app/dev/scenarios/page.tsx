@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { RequestForm, FormInitialState } from "../../page";
 import { lookupBranch, sendOtp, verifyOtp, OTP_RULES } from "@/lib/schema";
 
+export const dynamic = "force-dynamic";
+
 export default async function ScenariosPage({ searchParams }: { searchParams: Promise<{ s?: string }> }) {
   if (process.env.NODE_ENV === "production") {
     notFound();

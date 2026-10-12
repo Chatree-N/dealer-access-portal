@@ -64,3 +64,29 @@ This file tracks significant technical and architectural decisions made througho
   - The Stepper component exactly mirrors the design (e.g. pale green fill `#DCF5E7` with dark green `#2E7D5B` checkmark for completed steps, and violet connectors).
   - The Branch Information card layout, "Next" button label, and required field asterisks were brought to 1:1 parity with the design.
   - The OTP Resend flow perfectly matches the design layout and cooldown text ("Resend code in Ns").
+
+## 14. Database schema (Phase 3A)
+- **Status:** Approved & Implemented
+- **Context:** Transitioning the application from client-side mock fixtures to a robust PostgreSQL database foundation using Drizzle ORM.
+- **Tables (12 tables):**
+  1. `dealers`: Dealer entity (`id` PK, `name`, `created_at`).
+  2. `dealer_email_domains`: Allowed email domains for warning detection (`id` PK, `dealer_id` FK, `domain`, `created_at`).
+  3. `branches`: Branch master data with `dms_code` unique constraint, dealer FK, name, province, region, `status` enum (`active`/`inactive`), and `created_at`.
+  4. `openchat_rooms`: Stores OpenChat room configurations (`id` PK, `name`, `url`, `created_at`).
+  5. `room_to_dealer_region`: Routing/mapping table linking dealer and region to a specific room (`id` PK, `room_id` FK, `dealer_id` FK, `region_name`, `created_at`).
+  6. `consent_texts`: Versions of terms and legal consent text (`version` PK, `content`, `active_from`, `active_to`, `created_at`).
+  7. `admin_users`: Administrative accounts for approval back-office (`id` PK, `email` unique, `password_hash`, `role`, `created_at`, `last_login_at`).
+  8. `requests`: Public access requests (`id` PK like `REQ-0001`, `branch_id` FK, `first_name`, `last_name`, `email`, `email_verified_at`, `consent_text_version` FK, `consent_at`, `signature_kind` enum, `signature_ref`, `status` enum, `rejection_reason`, `reviewer_id` FK, `room_id` FK, `invite_sent_at`, `ip_hash`, `user_agent`, `created_at`). Composite index on `(email, status)` for duplicate-pending checks.
+  9. `email_verifications`: OTP verification tracking (`id` PK, `email`, `code_hash`, `expires_at`, `attempts`, `last_sent_at`, `resend_count`, `locked_until`, `created_at`).
+  10. `audit_log`: System and admin audit records (`id` PK, `actor`, `action`, `entity`, `entity_id`, `before` jsonb, `after` jsonb, `created_at`).
+  11. `rate_limits`: Postgres counters for IP / request rate limiting (`key` PK, `window_start`, `count`).
+  12. `invite_tokens`: Future token-based invite access table (`token_hash` PK, `request_id` FK, `room_id` FK, `expires_at`, `used_at`, `created_at`).
+- **Enums:**
+  - `branch_status`: `active`, `inactive`
+  - `request_status`: `pending_review`, `approved`, `invite_sent`, `rejected`
+  - `signature_kind`: `drawn`, `typed`
+- **Key Architectural Decisions:**
+  - **No `drafts` table:** A server-side drafts table would persist unverified personal identifiable information (PII such as unfinished names, emails, and signatures) prior to consent. To adhere to strict privacy-by-design and prevent unnecessary PII retention, drafts are held strictly in client component state during the session.
+  - **`invite_tokens` is unused (per ADR 7):** Fixed room invite URLs are delivered directly via email upon admin approval. The `invite_tokens` table is created in the schema to ensure forward schema compatibility for future single-use token-based invite expiration, but remains unused in the current architecture.
+  - **Hashed OTP codes (`code_hash`):** Raw OTP codes are never stored in plaintext in `email_verifications`. Storing one-way cryptographic hashes prevents database read leaks or exposure in logs/backups from compromising verification security.
+  - **OpenChat room URL server-side only:** The `url` column in `openchat_rooms` is strictly kept on the server and never exposed to client bundles or public API responses (enforced by `check:bundle` script and `server-only` guards).
