@@ -26,7 +26,7 @@
 
 ## Phases & Acceptance Criteria
 1. **Repo scaffold & Base Components:** Setup Next.js, Tailwind, Drizzle, tokens. Setup a `/dev/components` page. *AC: `FloatField2`, `Button`, `Stepper` match design tokens exactly on `/dev/components`.*
-2. **Public Form (Mocked):** Pages 1-4 with all 10 state scenarios + lookup states. *AC: Form logic transitions correctly; UI matches 1440px/375px screenshots.*
+2. **Public Form (Mocked):** Pages 1-4 with all 10 state scenarios + lookup states. *AC: Form logic transitions correctly; UI matches 1440px desktop screenshots.*
 3. **Database & API Integration:** Drizzle schema, branch lookup, OTP flow. *AC: Rate limits work. OTP emails send. Branch lookup masks data.*
 4. **Admin Back-Office:** Single admin login, Activity log, Approve/Reject flows, Bulk actions. *AC: Admin can preview emails, assign rooms, and reject with reason. Full audit trail recorded.*
 5. **Hardening & Security:** E2E tests, a11y audit, CSRF, final pass. *AC: Zero WCAG AA violations. PII stripped from logs.*

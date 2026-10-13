@@ -16,7 +16,7 @@ Built with Next.js, TypeScript and a violet Soft-UI design system.
 |---|---|---|---|
 | ![Step 1](screenshots/phase2/step1-found.png) | ![Step 2](screenshots/phase2/step2-verified.png) | ![Step 3](screenshots/phase2/step3-signature.png) | ![Step 4](screenshots/phase2/step4-success.png) |
 
-Mobile (375px) versions and 10 edge-case states live in `screenshots/`.
+Edge-case scenario states live in `screenshots/phase2c/`. Target viewport is 1440px desktop (ADR 15).
 
 ## What works today
 

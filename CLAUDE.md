@@ -23,7 +23,7 @@
 - `pnpm db:seed`: Seed the DB
 
 ## Rules
-- **Process:** Work in PR-sized phases. After every phase: run lint, typecheck, tests, and compare screenshots against the design (1440px and 375px). Use Conventional Commits. Log architectural decisions in `docs/DECISIONS.md`.
+- **Process:** Work in PR-sized phases. After every phase: run lint, typecheck, tests, and compare screenshots against the design (1440px only). Use Conventional Commits. Log architectural decisions in `docs/DECISIONS.md`.
 - **Language & Spec:** English-only UI. The `./design/` folder is read-only SPEC; NEVER import code from it directly.
 - **Privacy & Security:** 
   - NO phone number mentions anywhere.

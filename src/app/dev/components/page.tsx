@@ -10,11 +10,11 @@ export default function DevComponentsPage() {
   const [value, setValue] = useState("");
 
   return (
-    <main className="min-h-screen bg-[#F3F4F6] p-4 md:p-10 font-sans text-[#0F1220]">
+    <main className="min-h-screen bg-[#F3F4F6] p-10 font-sans text-[#0F1220]">
       <div className="max-w-5xl mx-auto space-y-12">
         <div>
           <h1 className="text-3xl font-bold mb-2">Component Playground</h1>
-          <p className="text-[#4B5563]">1440px desktop / 375px mobile ready.</p>
+          <p className="text-[#4B5563]">1440px desktop ready.</p>
         </div>
 
         {/* Buttons */}
@@ -33,7 +33,7 @@ export default function DevComponentsPage() {
         {/* FloatFields */}
         <section className="bg-white p-6 rounded-[12px] shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-[#E5E7EB]">
           <h2 className="text-xl font-bold mb-6 border-b border-[#E5E7EB] pb-2">Float Fields</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-6">
             <FloatField label="Default state" placeholder="e.g. 1234" />
             <FloatField label="Filled state" value="John Doe" onChange={() => {}} />
             <FloatField 

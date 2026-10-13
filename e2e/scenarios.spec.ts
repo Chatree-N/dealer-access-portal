@@ -79,15 +79,10 @@ test.describe('Phase 2C: Dev Scenarios', () => {
         await expect(page.getByText('Resend code')).toBeVisible();
       }
 
-      // Desktop screenshot
+      // Desktop screenshot (1440px per ADR 15)
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.waitForTimeout(200); // let animations settle
       await page.screenshot({ path: `screenshots/phase2c/${s}.png`, fullPage: true });
-
-      // Mobile screenshot
-      await page.setViewportSize({ width: 375, height: 667 });
-      await page.waitForTimeout(200);
-      await page.screenshot({ path: `screenshots/phase2c/${s}-375px.png`, fullPage: true });
     });
   }
 });

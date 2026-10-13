@@ -97,24 +97,6 @@ test.describe('Phase 2 Form', () => {
     
     await expect(page.getByText(/Approval may take longer/i)).toBeVisible();
   });
-});
-
-test.describe('Phase 2 Form - Mobile', () => {
-  test.use({ viewport: { width: 375, height: 667 } });
-
-  test('happy path mobile', async ({ page }) => {
-    await page.goto('/');
-    
-    // Assert "Step 1 of 3" is visible
-    await expect(page.getByText('Step 1 of 3').last()).toBeVisible();
-
-    await page.getByLabel(/Branch code/).fill('1234');
-    await page.getByRole('button', { name: 'Verify branch code' }).click();
-    await expect(page.getByText('Lotus T…').last()).toBeVisible();
-    await page.getByRole('button', { name: 'Continue' }).click();
-
-    await expect(page.getByText('Step 2 of 3').last()).toBeVisible();
-  });
 
   test('floating labels do not overlap input text when blurred (uncontrolled)', async ({ page }) => {
     await page.goto('/');
@@ -130,8 +112,6 @@ test.describe('Phase 2 Form - Mobile', () => {
     await firstNameInput.pressSequentially('Happy', { delay: 10 });
     await page.getByRole('heading', { name: 'Your details' }).click(); // click away to blur
     
-    // In the fieldset/legend approach, verify the legend (label) sits in the border notch
-    // above the input text area. Get the fieldset that contains this input.
     const fieldset = page.locator('fieldset').filter({ has: firstNameInput });
     const legend = fieldset.locator('legend');
     const legendBbox = await legend.boundingBox();

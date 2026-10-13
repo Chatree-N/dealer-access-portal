@@ -90,3 +90,7 @@ This file tracks significant technical and architectural decisions made througho
   - **`invite_tokens` is unused (per ADR 7):** Fixed room invite URLs are delivered directly via email upon admin approval. The `invite_tokens` table is created in the schema to ensure forward schema compatibility for future single-use token-based invite expiration, but remains unused in the current architecture.
   - **Hashed OTP codes (`code_hash`):** Raw OTP codes are never stored in plaintext in `email_verifications`. Storing one-way cryptographic hashes prevents database read leaks or exposure in logs/backups from compromising verification security.
   - **OpenChat room URL server-side only:** The `url` column in `openchat_rooms` is strictly kept on the server and never exposed to client bundles or public API responses (enforced by `check:bundle` script and `server-only` guards).
+
+## 15. Desktop-Only Architecture
+- **Decision:** Desktop-only. Target viewport 1440px. Mobile/responsive layouts are out of scope; WCAG 2.1 SC 1.4.10 Reflow is knowingly not met, all other AA checks still apply.
+- **Rationale:** The application is an enterprise internal dealer web portal meant for desktop workstation environments. Dropping mobile complexity allows cleaner styling, reduced maintenance overhead, and focused accessibility on desktop screens.

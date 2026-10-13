@@ -3,10 +3,11 @@ import { describe, it, expect } from 'vitest';
 import { Stepper } from '../Stepper';
 
 describe('Stepper', () => {
-  it('renders current step on mobile', () => {
+  it('renders current step and step details', () => {
     render(<Stepper currentStep={2} />);
-    expect(screen.getByText('Step 2 of 3')).toBeDefined();
-    expect(screen.getAllByText('Your details').length).toBeGreaterThan(0);
+    expect(screen.getByText('Branch code')).toBeDefined();
+    expect(screen.getByText('Your details')).toBeDefined();
+    expect(screen.getByText('Consent & signature')).toBeDefined();
   });
 
   it('marks previous steps as complete', () => {

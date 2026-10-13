@@ -163,10 +163,10 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
   });
 
   return (
-    <main className="min-h-screen bg-[#F3F4F8] font-sans text-[#111827] flex justify-center md:p-10">
-      <div className="w-full max-w-[1040px] bg-white border-0 md:border md:border-[#E5E7EB] md:rounded-[16px] overflow-hidden flex flex-col md:flex-row shadow-sm min-h-[100dvh] md:min-h-[600px]">
+    <main className="min-h-screen bg-[#F3F4F8] font-sans text-[#111827] flex justify-center p-10">
+      <div className="w-full max-w-[1040px] bg-white border border-[#E5E7EB] rounded-[16px] overflow-hidden flex flex-row shadow-sm min-h-[600px]">
         {/* Sidebar */}
-        <aside className="hidden md:flex flex-col w-[34%] bg-[#F7F8FA] border-r border-[#E5E7EB] py-10 px-8 gap-12">
+        <aside className="flex flex-col w-[34%] bg-[#F7F8FA] border-r border-[#E5E7EB] py-10 px-8 gap-12">
           <div className="flex items-center gap-3">
             <div aria-hidden="true" className="w-10 h-10 rounded-[10px] bg-[#6D3FE0] flex-none flex items-center justify-center">
               <div className="w-[14px] h-[14px] rounded bg-white" />
@@ -186,24 +186,19 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
             <span>Your details are used only to verify eligibility.</span>
           </div>
         </aside>
-        
-        {/* Mobile Stepper Header */}
-        <div className="md:hidden">
-          <Stepper currentStep={step} />
-        </div>
 
         {/* Content */}
-        <div className="flex-1 px-5 py-6 md:pt-7 md:px-14 md:pb-10 flex flex-col min-w-0">
-          <div className="hidden md:flex justify-end items-center gap-1.5 text-[14px] text-[#6B7280] whitespace-nowrap">
+        <div className="flex-1 pt-7 px-14 pb-10 flex flex-col min-w-0">
+          <div className="flex justify-end items-center gap-1.5 text-[14px] text-[#6B7280] whitespace-nowrap">
             <span>Need help?</span>
             <a href="#" className="text-[#6D3FE0] font-semibold no-underline">Contact the team</a>
           </div>
-          <div className="flex-1 flex flex-col gap-5 relative md:pt-7">
+          <div className="flex-1 flex flex-col gap-5 relative pt-7">
             {/* Step 1 */}
             {step === 1 && (
               <form onSubmit={handleStep1} className="flex-1 flex flex-col gap-6">
                 <div className="flex flex-col gap-1.5">
-                  <h1 ref={headingRef} tabIndex={-1} className="text-[22px] md:text-[28px] leading-[1.25] font-bold tracking-[-0.01em] text-[#0F1220] m-0 outline-none">Enter your branch code</h1>
+                  <h1 ref={headingRef} tabIndex={-1} className="text-[28px] leading-[1.25] font-bold tracking-[-0.01em] text-[#0F1220] m-0 outline-none">Enter your branch code</h1>
                   <p className="m-0 text-[16px] leading-[24px] text-[#6B7280]">Used to verify your eligibility to join the Line OpenChat group.</p>
                 </div>
 
@@ -322,7 +317,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
 
                 <div className="flex flex-col gap-[20px]">
                   <h2 className="m-0 text-[14px] font-semibold text-[#4B5563]">Requester</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px_16px]">
+                  <div className="grid grid-cols-2 gap-[20px_16px]">
                     <FloatField label="First name" required={true} icon="user" error={form2.formState.errors.firstName?.message} {...form2.register("firstName")} />
                     <FloatField label="Last name" required={true} error={form2.formState.errors.lastName?.message} {...form2.register("lastName")} />
                   </div>
@@ -369,7 +364,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                   ) : (
                     <div className="flex flex-col gap-[24px]">
                       <div className="flex flex-col gap-[6px]">
-                        <h2 className="m-0 text-[22px] md:text-[28px] leading-[1.25] font-bold text-[#0F1220] tracking-[-0.01em]">Verify your email</h2>
+                        <h2 className="m-0 text-[28px] leading-[1.25] font-bold text-[#0F1220] tracking-[-0.01em]">Verify your email</h2>
                         <p className="m-0 text-[16px] leading-[24px] text-[#6B7280] break-words">Enter the 6-digit code we sent to <span className="text-[#111827] font-semibold">{watchedEmail}</span>.</p>
                       </div>
                       <div className="relative flex gap-[16px] items-start">

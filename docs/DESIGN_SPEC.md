@@ -13,13 +13,12 @@
   - **Text:** `#0F1220`, `#111827`, `#374151`, `#6B7280`, `#9CA3AF`
   - **Surfaces/Borders:** `#FFFFFF`, `#FAFAFB`, `#F7F8FA`, `#F3F4F6`, `#E5E7EB`
 - **Spacing Scale:** `2px, 4px, 6px, 8px, 10px, 12px, 14px, 16px, 18px, 20px, 24px, 28px, 32px, 40px, 48px`
-- **Border Radius:** `6px`, `8px`, `9px`, `10px` (buttons/inputs), `12px` (cards), `16px` (wrappers), `44px` (mobile wrapper)
+- **Border Radius:** `6px`, `8px`, `9px`, `10px` (buttons/inputs), `12px` (cards), `16px` (wrappers)
 - **Shadows:**
   - Focus Ring: `0 0 0 2px rgba(109,63,224,.3)` or `rgba(220,62,62,.3)`
   - Primary Button: `0 1px 2px rgba(15,18,32,.08), 0 4px 12px rgba(109,63,224,.22)`
-  - Elevated Mobile: `0 -4px 16px rgba(15,18,32,.06)`
-- **Breakpoints:** Desktop fluid (max 1360px), Mobile layout triggers below 900px.
-- **Z-Index:** Header `30`, Admin Drawer `20`, Sticky Mobile Bar `5`, Pins/Badges `4`.
+- **Viewport:** Desktop-only target 1440px (per ADR 15; mobile layout dropped).
+- **Z-Index:** Header `30`, Admin Drawer `20`, Pins/Badges `4`.
 
 ## 2. Copy Deck (English Only)
 *(No phone number mentions anywhere)*
@@ -29,7 +28,6 @@
 - **Page 2 (Verify):** "Verify your email", "Enter the 6-digit code we sent to [email]."
 - **Page 3:** "Consent & signature", "Review the terms, confirm, and sign to submit."
 - **Page 4 (Success):** "Request submitted", "We'll review your details and email the Line OpenChat invite link to [email]." (Invite link is NEVER shown here).
-- **Mobile Stepper:** "Step 1 of 3", "Step 2 of 3", "Step 3 of 3", "Done"
 - **Admin Statuses:** "Pending review", "Approved", "Invite sent", "Rejected"
 - **Inputs:** "Branch code", "First name", "Last name", "Email address", "Verification code", "Signature (typed)"
 

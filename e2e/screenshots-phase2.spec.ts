@@ -4,16 +4,9 @@ test.describe('Phase 2 Screenshots', () => {
   const takeScreenshots = async (page: Page, name: string) => {
     await page.waitForTimeout(500); // Wait for fonts and animations
     
-    // Desktop
+    // Desktop (1440px per ADR 15)
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.screenshot({ path: `screenshots/phase2/${name}.png`, fullPage: true });
-
-    // Mobile
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.screenshot({ path: `screenshots/phase2/${name}-375px.png`, fullPage: true });
-    
-    // Reset to desktop for next step just in case
-    await page.setViewportSize({ width: 1440, height: 900 });
   };
 
   test('generate screenshots', async ({ page }) => {
