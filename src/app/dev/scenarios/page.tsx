@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { RequestForm, FormInitialState } from "../../page";
-import { sendOtp, verifyOtp, OTP_RULES } from "@/lib/schema";
+import { OTP_RULES } from "@/lib/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -85,19 +85,17 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       lookupState: "found",
       branchData: defaultBranchData,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
-      // eslint-disable-next-line react-hooks/purity
-      otpState: sendOtp(Date.now())
+      otpState: { attempts: 0, sentAt: now, expiresAt: now + OTP_RULES.EXPIRY_MS, isVerified: false },
+      timeRemaining: 60,
     };
   } else if (s === "verify-wrong") {
-    const otpStart = sendOtp(now);
-    const verRes = verifyOtp(otpStart, "000000", now);
     initialState = {
       step: 2,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
       branchData: defaultBranchData,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
-      otpState: verRes.newState,
+      otpState: { attempts: 1, sentAt: now, expiresAt: now + OTP_RULES.EXPIRY_MS, isVerified: false },
       otpInput: "000000",
       otpError: "That code doesn't match."
     };

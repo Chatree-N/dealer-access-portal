@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { checksRequestSchema, checkEmailDomain, checkDuplicateRequest } from '@/server/checks';
+import { verifyOtpProof } from '@/server/otp';
 import { checkRateLimit, hashIdentifier, getClientIp } from '@/server/rate-limit';
 import { logEvent } from '@/server/logger';
 
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { branchCode, email } = parsed.data;
+  const { branchCode, email, proof } = parsed.data;
 
   // Rate limiting check
   const clientIp = getClientIp(req);
@@ -46,17 +47,21 @@ export async function POST(req: Request) {
     );
   }
 
-  const [domainCheck, duplicateCheck] = await Promise.all([
-    checkEmailDomain(branchCode, email),
-    checkDuplicateRequest(branchCode, email),
-  ]);
+  const domainCheck = await checkEmailDomain(branchCode, email);
+
+  // Duplicate check is ONLY evaluated when a valid verified OTP proof is presented
+  let isDuplicate = false;
+  if (proof && verifyOtpProof(proof, email)) {
+    const dupeCheck = await checkDuplicateRequest(branchCode, email);
+    isDuplicate = dupeCheck.isDuplicate;
+  }
 
   logEvent('checks_completed', 200);
 
   return NextResponse.json(
     {
       isDomainMismatch: domainCheck.isDomainMismatch,
-      isDuplicate: duplicateCheck.isDuplicate,
+      isDuplicate,
     },
     { status: 200 }
   );

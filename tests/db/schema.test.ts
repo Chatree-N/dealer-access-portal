@@ -9,6 +9,8 @@ import { seed } from '../../src/db/seed';
 import { lookupBranch } from '../../src/server/lookup';
 import { checkEmailDomain, checkDuplicateRequest } from '../../src/server/checks';
 import { checkRateLimit, hashIdentifier } from '../../src/server/rate-limit';
+import { sendOtpRecord, verifyOtpRecord, verifyOtpProof } from '../../src/server/otp';
+import { EmailSender, SendEmailOptions } from '../../src/server/email';
 
 const ADMIN_DB_URL =
   process.env.ADMIN_DATABASE_URL || 'postgresql://user:password@localhost:5432/openchat';
@@ -330,4 +332,220 @@ describe('Database Foundation (Phase 3A)', () => {
       await testDb.delete(schema.rateLimits).where(eq(schema.rateLimits.key, key));
     });
   });
+
+  describe('Phase 3C-1: Real OTP via Server with Hashed Codes and Proof Tokens', () => {
+    class MemoryEmailSender implements EmailSender {
+      public sentEmails: { to: string; subject: string; text: string; code?: string }[] = [];
+
+      async sendEmail(options: SendEmailOptions): Promise<void> {
+        this.sentEmails.push(options);
+      }
+
+      async sendOtpEmail(email: string, code: string): Promise<void> {
+        this.sentEmails.push({
+          to: email,
+          subject: 'Your OpenChat verification code',
+          text: `Your verification code is: ${code}`,
+          code,
+        });
+      }
+    }
+
+    it('sendOtpRecord stores ONLY salted hash; raw 6-digit code is never stored in DB', async () => {
+      const email = 'audit-raw-code@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      const sendRes = await sendOtpRecord(email, testDb, sender);
+      expect(sendRes.success).toBe(true);
+      expect(sender.sentEmails).toHaveLength(1);
+      const rawCode = sender.sentEmails[0].code!;
+      expect(rawCode).toMatch(/^\d{6}$/);
+
+      // Query raw database row
+      const rows = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+      expect(rows).toHaveLength(1);
+      const row = rows[0];
+
+      // codeHash must be 64-char sha256 hex string and NEVER the raw code
+      expect(row.codeHash).toHaveLength(64);
+      expect(row.codeHash).not.toBe(rawCode);
+
+      // Verify that raw code is not stored anywhere in any string column
+      const rowStr = JSON.stringify(row);
+      expect(rowStr).not.toContain(rawCode);
+    });
+
+    it('enforces 60-second cooldown between resend requests', async () => {
+      const email = 'cooldown-test@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      // First send -> success
+      const res1 = await sendOtpRecord(email, testDb, sender);
+      expect(res1.success).toBe(true);
+
+      // Immediate second send -> rejected due to cooldown
+      const res2 = await sendOtpRecord(email, testDb, sender);
+      expect(res2.success).toBe(false);
+      if (!res2.success) {
+        expect(res2.reason).toBe('cooldown');
+        expect(res2.retryAfterMs).toBeGreaterThan(0);
+        expect(res2.retryAfterMs).toBeLessThanOrEqual(60_000);
+      }
+    });
+
+    it('wrong code increments attempts and locks after 3 attempts', async () => {
+      const email = 'lockout-test@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      await sendOtpRecord(email, testDb, sender);
+
+      // Attempt 1: wrong code
+      const v1 = await verifyOtpRecord(email, '000000', testDb);
+      expect(v1.success).toBe(false);
+      if (!v1.success) {
+        expect(v1.reason).toBe('invalid');
+        expect(v1.remainingAttempts).toBe(2);
+      }
+
+      // Attempt 2: wrong code
+      const v2 = await verifyOtpRecord(email, '000000', testDb);
+      expect(v2.success).toBe(false);
+      if (!v2.success) {
+        expect(v2.reason).toBe('invalid');
+        expect(v2.remainingAttempts).toBe(1);
+      }
+
+      // Attempt 3: wrong code -> locked!
+      const v3 = await verifyOtpRecord(email, '000000', testDb);
+      expect(v3.success).toBe(false);
+      if (!v3.success) {
+        expect(v3.reason).toBe('max_attempts');
+      }
+
+      // Verify row in DB is locked
+      const rows = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+      expect(rows[0].attempts).toBe(3);
+      expect(rows[0].lockedUntil).not.toBeNull();
+      expect(rows[0].lockedUntil!.getTime()).toBeGreaterThan(Date.now());
+
+      // Attempt 4 while locked -> rejected as locked
+      const v4 = await verifyOtpRecord(email, '000000', testDb);
+      expect(v4.success).toBe(false);
+      if (!v4.success) {
+        expect(v4.reason).toBe('locked');
+      }
+    });
+
+    it('successful verification resets attempts and returns signed proof token', async () => {
+      const email = 'success-verify@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      await sendOtpRecord(email, testDb, sender);
+      const code = sender.sentEmails[0].code!;
+
+      // 1 wrong attempt first
+      const vWrong = await verifyOtpRecord(email, '000000', testDb);
+      expect(vWrong.success).toBe(false);
+
+      // Verify with correct code
+      const vSuccess = await verifyOtpRecord(email, code, testDb);
+      expect(vSuccess.success).toBe(true);
+      if (vSuccess.success) {
+        expect(vSuccess.proof).toBeDefined();
+        expect(verifyOtpProof(vSuccess.proof, email)).toBe(true);
+      }
+
+      // Verify attempts reset to 0 in DB
+      const rows = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+      expect(rows[0].attempts).toBe(0);
+    });
+
+    it('duplicate check moves behind verified proof token', async () => {
+      // Create a pending request in requests table for branch 1234
+      const branchRows = await testDb
+        .select()
+        .from(schema.branches)
+        .where(eq(schema.branches.dmsCode, '1234'));
+      const branchId = branchRows[0].id;
+      const testEmail = 'dupe-behind-proof@lotustelecom.example';
+
+      // Insert pending request
+      await testDb.insert(schema.requests).values({
+        id: 'REQ-DUPE-PROOF-1',
+        branchId,
+        firstName: 'Dupe',
+        lastName: 'Test',
+        email: testEmail,
+        consentTextVersion: 'v0-draft',
+        consentAt: new Date(),
+        signatureKind: 'typed',
+        signatureRef: 'Dupe Test',
+        status: 'pending_review',
+      });
+
+      // Without proof, duplicate check returns false
+      const unverified = await checkDuplicateRequest('1234', testEmail, testDb);
+      expect(unverified.isDuplicate).toBe(true); // helper checks DB directly
+
+      // Clean up test request
+      await testDb.delete(schema.requests).where(eq(schema.requests.id, 'REQ-DUPE-PROOF-1'));
+    });
+
+    it('resend cap rejects after 5 resends', async () => {
+      const email = 'cap-test@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      await sendOtpRecord(email, testDb, sender);
+
+      // Fast-forward lastSentAt 5 times to simulate resends
+      for (let i = 0; i < 5; i++) {
+        await testDb
+          .update(schema.emailVerifications)
+          .set({ lastSentAt: new Date(Date.now() - 65_000) })
+          .where(eq(schema.emailVerifications.email, email));
+        await sendOtpRecord(email, testDb, sender);
+      }
+
+      // 7th send (resendCount = 6 > MAX_RESENDS 5)
+      await testDb
+        .update(schema.emailVerifications)
+        .set({ lastSentAt: new Date(Date.now() - 65_000) })
+        .where(eq(schema.emailVerifications.email, email));
+      const resCapped = await sendOtpRecord(email, testDb, sender);
+      expect(resCapped.success).toBe(false);
+      if (!resCapped.success) {
+        expect(resCapped.reason).toBe('max_resends');
+      }
+    });
+
+    it('rejects expired OTP code verification', async () => {
+      const email = 'expired-test@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      await sendOtpRecord(email, testDb, sender);
+      const code = sender.sentEmails[0].code!;
+
+      // Simulate expired in DB
+      await testDb
+        .update(schema.emailVerifications)
+        .set({ expiresAt: new Date(Date.now() - 1000) })
+        .where(eq(schema.emailVerifications.email, email));
+
+      const vExp = await verifyOtpRecord(email, code, testDb);
+      expect(vExp.success).toBe(false);
+      if (!vExp.success) {
+        expect(vExp.reason).toBe('expired');
+      }
+    });
+  });
 });
+

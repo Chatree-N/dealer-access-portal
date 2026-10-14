@@ -9,6 +9,7 @@ import { branchCodeSchema } from './lookup';
 export const checksRequestSchema = z.object({
   branchCode: branchCodeSchema,
   email: z.string().trim().email('Invalid email address'),
+  proof: z.string().optional(),
 });
 
 /**

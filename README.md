@@ -93,8 +93,9 @@ Vitest + Testing Library, Playwright + axe-core, PostgreSQL 16 + Drizzle ORM, Ma
 | 2 | Public request form, mock logic, scenarios, tests | Done |
 | 3A | Database foundation (schema, migrations, seed, tests) | Done |
 | 3B | Server-side branch lookup, checks, rate limiting & zero PII | Done |
+| 3C-1 | Real OTP via Mailpit with hashed codes and signed proof | Done |
 | 4 | Admin back-office (approve / reject) | Planned |
-| 5 | Email delivery via Mailpit (OTP and invite) | Planned |
+| 5 | Invite email delivery, rate limit purging | Planned |
 | 6 | Local runbook and polish | Planned |
 
 ## Notes

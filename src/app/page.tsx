@@ -8,7 +8,6 @@ import { FloatField } from "@/components/ui/FloatField";
 import { Stepper } from "@/components/ui/Stepper";
 import { SignaturePad } from "@/components/ui/SignaturePad";
 import { 
-  sendOtp, verifyOtp,
   step1Schema, step2Schema, step3Schema, LookupResult, OtpState, OTP_RULES 
 } from "@/lib/schema";
 import { toggleSignatureMode, getCountdownSeconds } from "@/lib/logic";
@@ -27,6 +26,8 @@ export type FormInitialState = {
   otpError?: string;
   duplicateError?: string;
   domainWarning?: string;
+  otpProof?: string;
+  timeRemaining?: number;
   sigType?: "drawn" | "typed";
   form3?: { consent: boolean; signature: { type: "drawn" | "typed"; value: string } };
   form3Errors?: Record<string, string>;
@@ -69,7 +70,8 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
   const [otpError, setOtpError] = useState(initialState.otpError || "");
   const [duplicateError, setDuplicateError] = useState(initialState.duplicateError || "");
   const [domainWarning, setDomainWarning] = useState(initialState.domainWarning || "");
-  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(initialState.timeRemaining ?? 0);
+  const [otpProof, setOtpProof] = useState<string>(initialState.otpProof || "");
 
   const watchedEmail = useWatch({
     control: form2.control,
@@ -208,46 +210,101 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
   });
 
   const triggerOtp = async () => {
-    const branchCode = form1.getValues("branchCode");
+    const valid = await form2.trigger("email");
+    if (!valid) return;
+
     try {
-      const res = await fetch("/api/checks", {
+      const res = await fetch("/api/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ branchCode, email: watchedEmail }),
+        body: JSON.stringify({ email: watchedEmail }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.isDuplicate) {
-          setDuplicateError("A request for this email is already pending approval.");
-          return;
-        }
-      }
-    } catch {
-      // Fallback
-    }
 
-    setDuplicateError("");
-    setOtpState(sendOtp(Date.now()));
-    setOtpError("");
-    setOtpInput("");
+      if (res.status === 429) {
+        const data = await res.json().catch(() => ({}));
+        setOtpError(data.message || "Too many requests. Please try again later.");
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setOtpError(data.message || "Failed to send verification code.");
+        return;
+      }
+
+      setDuplicateError("");
+      setTimeRemaining(Math.ceil(OTP_RULES.COOLDOWN_MS / 1000));
+      setOtpState({
+        attempts: 0,
+        sentAt: Date.now(),
+        expiresAt: Date.now() + OTP_RULES.EXPIRY_MS,
+        isVerified: false,
+      });
+      setOtpError("");
+      setOtpInput("");
+    } catch {
+      setOtpError("Network error: Could not send verification code.");
+    }
   };
 
-  const handleVerifyOtp = () => {
-    if (!otpState) return;
-    const res = verifyOtp(otpState, otpInput, Date.now());
-    setOtpState(res.newState);
-    if (!res.success) {
-      setOtpError(res.reason === "invalid" ? "That code doesn't match." : "Expired or too many attempts.");
-    } else {
+  const handleVerifyOtp = async () => {
+    if (!otpInput || otpInput.trim().length !== 6) {
+      setOtpError("That code doesn't match.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: watchedEmail, code: otpInput.trim() }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.success) {
+        setOtpError(data.message || "That code doesn't match.");
+        if (data.reason === "max_attempts" || data.reason === "expired") {
+          setOtpState((prev) => prev ? { ...prev, isVerified: false, attempts: 3 } : null);
+        }
+        return;
+      }
+
+      setOtpProof(data.proof);
+      setTimeRemaining(0);
       setOtpError("");
+      setOtpState((prev) => prev ? { ...prev, isVerified: true } : { attempts: 0, sentAt: Date.now(), isVerified: true });
+
+      // Run duplicate check with the verified proof
+      const branchCode = form1.getValues("branchCode");
+      try {
+        const checkRes = await fetch("/api/checks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ branchCode, email: watchedEmail, proof: data.proof }),
+        });
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          if (checkData.isDuplicate) {
+            setDuplicateError("A request for this email is already pending approval.");
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    } catch {
+      setOtpError("Network error: Could not verify code.");
     }
   };
 
   const handleStep2 = form2.handleSubmit(() => {
+    if (duplicateError) return;
     setStep(3);
   });
 
   const handleStep3 = form3.handleSubmit(() => {
+    // Retain proof token for Phase 3C-2 / Phase 4 submission endpoint
+    void otpProof;
     setReqId("#REQ-0042");
     setStep(4);
   });
@@ -492,7 +549,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
 
                 <div className="mt-[40px] flex items-center justify-between gap-[16px]">
                   <Button type="button" variant="secondary" onClick={() => setStep(1)} className="min-w-[112px]">Back</Button>
-                  <Button type="submit" disabled={!otpState?.isVerified} className="min-w-[140px]">
+                  <Button type="submit" disabled={!otpState?.isVerified || !!duplicateError} className="min-w-[140px]">
                     {otpState?.isVerified ? "Continue" : "Next"}
                   </Button>
                 </div>

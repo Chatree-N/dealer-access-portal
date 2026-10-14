@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 test.describe('Phase 2 Screenshots', () => {
   const takeScreenshots = async (page: Page, name: string) => {
@@ -33,13 +33,42 @@ test.describe('Phase 2 Screenshots', () => {
     await page.waitForTimeout(500);
     
     // Step 2: Details
+    const screenshotEmail = 'screenshot.user@lotustelecom.example';
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByLabel(/First name/).fill('Happy');
     await page.getByLabel(/Last name/).fill('Path');
-    await page.getByLabel(/Email address/).fill('happy@lotustelecom.example');
+    await page.getByLabel(/Email address/).fill(screenshotEmail);
+    
     await page.getByRole('button', { name: 'Verify email' }).click();
-    await page.getByLabel(/Verification code/).fill('123456');
+    await expect(page.getByLabel(/Verification code/)).toBeVisible();
+    await page.waitForTimeout(500);
+    await takeScreenshots(page, 'step2-sent');
+
+    // Wrong code attempt for screenshot
+    await page.getByLabel(/Verification code/).fill('000000');
     await page.getByRole('button', { name: 'Verify code' }).click();
+    await expect(page.getByText(/That code doesn't match/i)).toBeVisible();
+    await page.waitForTimeout(500);
+    await takeScreenshots(page, 'step2-wrong');
+
+    // Fetch real code from Mailpit for screenshotEmail
+    let realCode = '';
+    await expect.poll(async () => {
+      const res = await page.request.get('http://localhost:8025/api/v1/messages');
+      const data = await res.json();
+      const msg = data.messages?.find((m: { To?: Array<{ Address: string }> }) =>
+        m.To?.some((t) => t.Address.toLowerCase() === screenshotEmail.toLowerCase())
+      );
+      if (msg) {
+        realCode = msg.Snippet.match(/\b\d{6}\b/)?.[0] || '';
+      }
+      return realCode;
+    }).toMatch(/^\d{6}$/);
+
+    // Verify with real code
+    await page.getByLabel(/Verification code/).fill(realCode);
+    await page.getByRole('button', { name: 'Verify code' }).click();
+    await expect(page.getByText(/Email verified/i)).toBeVisible();
     await page.waitForTimeout(500);
     await takeScreenshots(page, 'step2-verified');
 

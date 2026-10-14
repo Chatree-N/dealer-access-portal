@@ -121,4 +121,25 @@ This file tracks significant technical and architectural decisions made througho
 - **Known Limitations:**
   - `x-forwarded-for` can be spoofed (acceptable for a local demo).
   - `rate_limits` rows are not purged yet (Phase 5).
-  - duplicate check will move behind OTP verification in Phase 3C.
+  - Duplicate check moved behind verified OTP proof in Phase 3C-1.
+
+## 17. Server-Side Real OTP Verification & Signed Proof Tokens (Phase 3C-1)
+- **Status:** Approved & Implemented
+- **Context:** Moving email OTP verification off the client onto the server, backed by PostgreSQL `email_verifications` and delivered via Mailpit SMTP.
+- **Decision 1 (Hashed OTP Storage & Zero-Knowledge):**
+  - Raw 6-digit numeric OTP codes (`crypto.randomInt(100000, 1000000)`) are generated on the server and immediately hashed with SHA-256 using `OTP_PROOF_SECRET` salt: `crypto.createHash('sha256').update(`${email}:${code}:${secret}`).digest('hex')`.
+  - Raw codes are NEVER stored in the database (`code_hash` column only) and NEVER logged.
+  - Constant-time comparison (`crypto.timingSafeEqual`) prevents timing attack vulnerabilities during code verification.
+- **Decision 2 (Atomic Life-Cycle Controls):**
+  - **Expiry:** 10 minutes (`EXPIRY_MS = 600,000`).
+  - **Resend Cooldown:** 60 seconds (`COOLDOWN_MS = 60,000`).
+  - **Failed Attempts Lockout:** Maximum 3 attempts (`MAX_ATTEMPTS = 3`). On the 3rd failed attempt, the verification record is locked for 15 minutes (`locked_until`).
+  - **Resend Cap:** Maximum 5 resends (`MAX_RESENDS = 5`) to prevent mailbox flooding.
+- **Decision 3 (Signed Proof Token):**
+  - Upon successful code verification, `/api/otp/verify` issues a short-lived HMAC-SHA256 signed proof token containing `{ email, verifiedAt, exp }` signed with `OTP_PROOF_SECRET`.
+  - The secret is strictly required in production runtime (throws on server startup if missing) with a dev-only default in dev/test.
+  - Moving the duplicate request check behind this proof ensures that unauthenticated clients cannot query whether an email has a pending request.
+- **Decision 4 (Swappable Email Sender):**
+  - Abstracted behind `EmailSender` interface (`src/server/email/`).
+  - Default `SmtpEmailSender` implementation communicates with local Mailpit on `SMTP_HOST:SMTP_PORT`. Direct `nodemailer` imports are strictly isolated to `src/server/email/`.
+  - Email content strictly contains the 6-digit code and expiration warning; room invite links are never included.

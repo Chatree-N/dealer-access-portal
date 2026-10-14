@@ -24,12 +24,29 @@ test.describe('Phase 2 Form', () => {
 
     // Step 2: Details
     await checkAxe(page);
+    const happyEmail = 'happy.path@lotustelecom.example';
     await page.getByLabel(/First name/).fill('Happy');
     await page.getByLabel(/Last name/).fill('Path');
-    await page.getByLabel(/Email address/).fill('happy@lotustelecom.example');
+    await page.getByLabel(/Email address/).fill(happyEmail);
     
     await page.getByRole('button', { name: 'Verify email' }).click();
-    await page.getByLabel(/Verification code/).fill('123456');
+    await expect(page.getByLabel(/Verification code/)).toBeVisible();
+    
+    // Fetch real OTP from Mailpit for happyEmail
+    let otpCode = '';
+    await expect.poll(async () => {
+      const res = await page.request.get('http://localhost:8025/api/v1/messages');
+      const data = await res.json();
+      const msg = data.messages?.find((m: { To?: Array<{ Address: string }> }) =>
+        m.To?.some((t) => t.Address.toLowerCase() === happyEmail.toLowerCase())
+      );
+      if (msg) {
+        otpCode = msg.Snippet.match(/\b\d{6}\b/)?.[0] || '';
+      }
+      return otpCode;
+    }).toMatch(/^\d{6}$/);
+
+    await page.getByLabel(/Verification code/).fill(otpCode);
     await page.getByRole('button', { name: 'Verify code' }).click();
     await expect(page.getByText('Email verified')).toBeVisible();
     
@@ -119,19 +136,47 @@ test.describe('Phase 2 Form', () => {
     await checkAxe(page);
   });
 
-  test('wrong OTP then correct OTP', async ({ page }) => {
+  test('real OTP flow via Mailpit: send, wrong code, correct code, resend cooldown', async ({ page }) => {
     await page.getByLabel(/Branch code/).fill('1234');
     await page.getByRole('button', { name: 'Verify branch code' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
 
+    const otpFlowEmail = 'real.otp.flow@lotustelecom.example';
     await page.getByLabel(/First name/).fill('A');
     await page.getByLabel(/Last name/).fill('B');
-    await page.getByLabel(/Email address/).fill('a@lotustelecom.example');
+    await page.getByLabel(/Email address/).fill(otpFlowEmail);
     await page.getByRole('button', { name: 'Verify email' }).click();
     
+    // Check that cooldown timer and input are displayed
+    await expect(page.getByText(/Resend code in/i)).toBeVisible();
+    await expect(page.getByLabel(/Verification code/)).toBeVisible();
+    await checkAxe(page);
+
+    // Fetch real code from Mailpit for otpFlowEmail
+    let realCode = '';
+    await expect.poll(async () => {
+      const res = await page.request.get('http://localhost:8025/api/v1/messages');
+      const data = await res.json();
+      const msg = data.messages?.find((m: { To?: Array<{ Address: string }> }) =>
+        m.To?.some((t) => t.Address.toLowerCase() === otpFlowEmail.toLowerCase())
+      );
+      if (msg) {
+        realCode = msg.Snippet.match(/\b\d{6}\b/)?.[0] || '';
+      }
+      return realCode;
+    }).toMatch(/^\d{6}$/);
+
+    // Enter wrong code first
     await page.getByLabel(/Verification code/).fill('000000');
     await page.getByRole('button', { name: 'Verify code' }).click();
     await expect(page.getByText(/That code doesn't match/i)).toBeVisible();
+    await checkAxe(page);
+
+    // Enter correct code from Mailpit
+    await page.getByLabel(/Verification code/).fill(realCode);
+    await page.getByRole('button', { name: 'Verify code' }).click();
+    await expect(page.getByText(/Email verified/i)).toBeVisible();
+    await checkAxe(page);
   });
 
   test('domain warning', async ({ page }) => {

@@ -24,6 +24,11 @@ describe("Sanitized Logging (Zero PII)", () => {
     expect(() => formatLog("otp_sent_to_test@lotustelecom.example", 200)).toThrow(/PII violation/);
   });
 
+  it("fails and throws if a log line contains a raw 6-digit OTP code", () => {
+    expect(() => formatLog("otp_code_654321_generated", 200)).toThrow(/PII violation/);
+    expect(() => formatLog("verify_attempt_123456_failed", 400)).toThrow(/PII violation/);
+  });
+
   it("fails and throws if a log line contains a personal name", () => {
     expect(() => formatLog("request_from_jane_received", 200)).toThrow(/PII violation/);
     expect(() => formatLog("request_from_somchai_approved", 200)).toThrow(/PII violation/);
