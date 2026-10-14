@@ -12,11 +12,31 @@ test.describe('Phase 2 Screenshots', () => {
   test('generate screenshots', async ({ page }) => {
     await page.goto('/');
     
-    // Step 1: Branch found
+    // Step 1: Branch found (1234)
     await page.getByLabel(/Branch code/).fill('1234');
     await page.getByRole('button', { name: 'Verify branch code' }).click();
     await page.waitForTimeout(500); // wait for lookup
     await takeScreenshots(page, 'step1-found');
+
+    // Step 1: Branch inactive (9999)
+    await page.goto('/');
+    await page.getByLabel(/Branch code/).fill('9999');
+    await page.getByRole('button', { name: 'Verify branch code' }).click();
+    await page.waitForTimeout(500);
+    await takeScreenshots(page, 'step1-inactive');
+
+    // Step 1: Branch not found (0000)
+    await page.goto('/');
+    await page.getByLabel(/Branch code/).fill('0000');
+    await page.getByRole('button', { name: 'Verify branch code' }).click();
+    await page.waitForTimeout(500);
+    await takeScreenshots(page, 'step1-notfound');
+
+    // Resume full flow from step 1 found
+    await page.goto('/');
+    await page.getByLabel(/Branch code/).fill('1234');
+    await page.getByRole('button', { name: 'Verify branch code' }).click();
+    await page.waitForTimeout(500);
     
     // Step 2: Details
     await page.getByRole('button', { name: 'Continue' }).click();

@@ -63,10 +63,39 @@ test.describe('Phase 2 Form', () => {
     await expect(page.getByRole('heading', { name: 'Request submitted' })).toBeVisible();
   });
 
-  test('not found cases (9999 and 0000)', async ({ page }) => {
+  test('inactive branch (9999) displays branch not found and passes axe', async ({ page }) => {
     await page.getByLabel(/Branch code/).fill('9999');
     await page.getByRole('button', { name: 'Verify branch code' }).click();
     await expect(page.getByText(/Branch not found/i)).toBeVisible();
+    await checkAxe(page);
+  });
+
+  test('not found branch (0000) displays branch not found and passes axe', async ({ page }) => {
+    await page.getByLabel(/Branch code/).fill('0000');
+    await page.getByRole('button', { name: 'Verify branch code' }).click();
+    await expect(page.getByText(/Branch not found/i)).toBeVisible();
+    await checkAxe(page);
+  });
+
+  test('rate-limited state: 429 returns generic message and passes axe', async ({ page }) => {
+    const testIp = '198.51.100.99';
+    await page.setExtraHTTPHeaders({ 'x-forwarded-for': testIp });
+    await page.goto('/');
+
+    // Exhaust 10-request quota via API
+    for (let i = 0; i < 11; i++) {
+      await page.request.post('/api/branch/lookup', {
+        headers: { 'x-forwarded-for': testIp },
+        data: { branchCode: '1234' },
+      });
+    }
+
+    // Attempt lookup via UI, must display 429 message
+    await page.getByLabel(/Branch code/).fill('1234');
+    await page.getByRole('button', { name: 'Verify branch code' }).click();
+
+    await expect(page.getByText(/Too many requests\. Please try again later\./i)).toBeVisible();
+    await checkAxe(page);
   });
 
   test('wrong OTP then correct OTP', async ({ page }) => {

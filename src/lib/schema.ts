@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { BRANCHES, DEALERS } from "../../fixtures/branches";
 
 // Step 1: Branch Code + Honeypot
 export const step1Schema = z.object({
@@ -23,60 +22,10 @@ export const step3Schema = z.object({
   }),
 });
 
-// Logic: Branch Lookup
-export type LookupResult = 
-  | { status: "found"; dealerName: string; dealerDomains: string[]; branchName: string }
+// Masked lookup result shape for client state
+export type LookupResult =
+  | { status: "found"; maskedDealer: string; maskedBranch: string }
   | { status: "notfound" };
-
-export function lookupBranch(code: string): LookupResult {
-  const trimmed = code.trim();
-  if (!trimmed) return { status: "notfound" };
-
-  const branch = BRANCHES.find(b => b.code === trimmed);
-  if (!branch || branch.status === "inactive") {
-    return { status: "notfound" };
-  }
-
-  const dealer = DEALERS.find(d => d.id === branch.dealerId);
-  if (!dealer) {
-    return { status: "notfound" };
-  }
-
-  // Masking rule: First word + space + first letter of the next word + "…"
-  const applyMask = (text: string, uppercase: boolean) => {
-    const parts = text.split(/\s+/);
-    const firstWord = parts[0] || "";
-    const secondLetter = parts[1] ? parts[1][0] : "";
-    const result = secondLetter ? `${firstWord} ${secondLetter}…` : `${firstWord}…`;
-    return uppercase ? result.toUpperCase() : result;
-  };
-
-  return {
-    status: "found",
-    dealerName: applyMask(dealer.name, false),
-    dealerDomains: dealer.emailDomains,
-    branchName: applyMask(branch.name, true),
-  };
-}
-
-// Logic: Domain Warning
-export function isDomainWarning(email: string, dealerDomains: string[]): boolean {
-  if (!email || !email.includes("@")) return false;
-  if (!dealerDomains || dealerDomains.length === 0) return false;
-  
-  const parts = email.toLowerCase().split("@");
-  if (parts.length < 2) return false;
-  const emailDomain = parts[1];
-
-  return !dealerDomains.some(domain => domain.toLowerCase() === emailDomain);
-}
-
-// Logic: Duplicate Request check
-export const MOCK_PENDING_EMAILS = ["pending@example.com", "dupe@example.com"];
-
-export function isDuplicateRequest(email: string): boolean {
-  return MOCK_PENDING_EMAILS.includes(email.toLowerCase());
-}
 
 // Logic: OTP Rules (pure functions)
 export type OtpState = {
@@ -107,13 +56,13 @@ export function sendOtp(now: number): OtpState {
   };
 }
 
-export type VerifyOtpResult = 
+export type VerifyOtpResult =
   | { success: true; newState: OtpState }
   | { success: false; reason: "expired" | "max_attempts" | "invalid"; newState: OtpState };
 
 export function verifyOtp(state: OtpState, code: string, now: number): VerifyOtpResult {
   if (state.isVerified) return { success: true, newState: state };
-  
+
   if (!state.expiresAt || now > state.expiresAt) {
     return { success: false, reason: "expired", newState: state };
   }
@@ -130,9 +79,9 @@ export function verifyOtp(state: OtpState, code: string, now: number): VerifyOtp
     return { success: true, newState };
   }
 
-  return { 
-    success: false, 
-    reason: newAttempts >= OTP_RULES.MAX_ATTEMPTS ? "max_attempts" : "invalid", 
-    newState 
+  return {
+    success: false,
+    reason: newAttempts >= OTP_RULES.MAX_ATTEMPTS ? "max_attempts" : "invalid",
+    newState,
   };
 }

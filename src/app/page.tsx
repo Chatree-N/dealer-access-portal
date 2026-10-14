@@ -8,11 +8,10 @@ import { FloatField } from "@/components/ui/FloatField";
 import { Stepper } from "@/components/ui/Stepper";
 import { SignaturePad } from "@/components/ui/SignaturePad";
 import { 
-  lookupBranch, isDomainWarning, sendOtp, verifyOtp,
+  sendOtp, verifyOtp,
   step1Schema, step2Schema, step3Schema, LookupResult, OtpState, OTP_RULES 
 } from "@/lib/schema";
 import { toggleSignatureMode, getCountdownSeconds } from "@/lib/logic";
-import { isDuplicateRequest } from "@/lib/schema";
 
 export type FormInitialState = {
   step?: number;
@@ -27,6 +26,7 @@ export type FormInitialState = {
   otpInput?: string;
   otpError?: string;
   duplicateError?: string;
+  domainWarning?: string;
   sigType?: "drawn" | "typed";
   form3?: { consent: boolean; signature: { type: "drawn" | "typed"; value: string } };
   form3Errors?: Record<string, string>;
@@ -68,6 +68,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
   const [otpInput, setOtpInput] = useState(initialState.otpInput || "");
   const [otpError, setOtpError] = useState(initialState.otpError || "");
   const [duplicateError, setDuplicateError] = useState(initialState.duplicateError || "");
+  const [domainWarning, setDomainWarning] = useState(initialState.domainWarning || "");
   const [timeRemaining, setTimeRemaining] = useState(0);
 
   const watchedEmail = useWatch({
@@ -106,6 +107,49 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
     return () => clearInterval(interval);
   }, [otpState]);
 
+  // Server-side check for domain mismatch (warning only, never blocks)
+  useEffect(() => {
+    if (initialState.domainWarning) {
+      return;
+    }
+
+    let active = true;
+    const timer = setTimeout(async () => {
+      if (!watchedEmail || !watchedEmail.includes("@")) {
+        if (active) setDomainWarning("");
+        return;
+      }
+      const branchCode = form1.getValues("branchCode");
+      if (!branchCode) {
+        if (active) setDomainWarning("");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/checks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ branchCode, email: watchedEmail }),
+        });
+        if (res.ok && active) {
+          const data = await res.json();
+          if (data.isDomainMismatch) {
+            setDomainWarning("This email isn't on your dealer's domain. Approval may take longer.");
+          } else {
+            setDomainWarning("");
+          }
+        }
+      } catch {
+        // Warning check network errors are silently ignored
+      }
+    }, 200);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [watchedEmail, form1, initialState.domainWarning]);
+
   // Actions
   const handleStep1 = form1.handleSubmit(async (data) => {
     if (data.honeypot) {
@@ -116,26 +160,72 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
     setLookupState("loading");
     setNetworkError("");
     
-    // Simulate network delay
-    await new Promise(r => setTimeout(r, 500));
-    
-    // Inject mock network error for testing if code is exactly 'error' (or via initial state we'll skip this)
+    // Inject mock network error for testing if code is exactly 'error'
     if (data.branchCode === "error") {
       setLookupState("idle");
       setNetworkError("Network error: Could not connect to the server.");
       return;
     }
 
-    const result = lookupBranch(data.branchCode);
-    setBranchData(result);
-    setLookupState(result.status);
+    try {
+      const res = await fetch("/api/branch/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          branchCode: data.branchCode,
+          honeypot: data.honeypot || "",
+        }),
+      });
+
+      if (res.status === 429) {
+        setLookupState("idle");
+        setNetworkError("Too many requests. Please try again later.");
+        return;
+      }
+
+      if (!res.ok) {
+        setBranchData(null);
+        setLookupState("notfound");
+        return;
+      }
+
+      const result = await res.json();
+      if (result.status === "found") {
+        setBranchData({
+          status: "found",
+          maskedDealer: result.maskedDealer,
+          maskedBranch: result.maskedBranch,
+        });
+        setLookupState("found");
+      } else {
+        setBranchData(null);
+        setLookupState("notfound");
+      }
+    } catch {
+      setLookupState("idle");
+      setNetworkError("Network error: Could not connect to the server.");
+    }
   });
 
-  const triggerOtp = () => {
-    if (isDuplicateRequest(watchedEmail)) {
-      setDuplicateError(`A request for ${watchedEmail} is already pending approval.`);
-      return;
+  const triggerOtp = async () => {
+    const branchCode = form1.getValues("branchCode");
+    try {
+      const res = await fetch("/api/checks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ branchCode, email: watchedEmail }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.isDuplicate) {
+          setDuplicateError("A request for this email is already pending approval.");
+          return;
+        }
+      }
+    } catch {
+      // Fallback
     }
+
     setDuplicateError("");
     setOtpState(sendOtp(Date.now()));
     setOtpError("");
@@ -252,9 +342,9 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                       <div className="flex flex-col gap-1 min-w-0">
                         <div className="text-[14px] font-bold text-[#1F5C42]">Branch found</div>
                         <div className="flex flex-wrap items-center gap-2 text-[16px] leading-[24px] font-semibold text-[#0F1220]">
-                          <span>{branchData.dealerName}</span>
+                          <span>{branchData.maskedDealer}</span>
                           <span aria-hidden="true" className="text-[#6B7280] font-normal">/</span>
-                          <span>{branchData.branchName}</span>
+                          <span>{branchData.maskedBranch}</span>
                         </div>
                         <div className="flex items-center gap-[6px] text-[13px] leading-[18px] text-[#1F5C42]">
                           <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
@@ -297,7 +387,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-[14px_24px]">
                       <div className="flex flex-col gap-[2px] min-w-0">
                         <span className="text-[13px] text-[#4B5563]">Dealer name</span>
-                        <span className="text-[16px] leading-[24px] font-semibold text-[#111827]">{branchData?.status === "found" ? branchData.dealerName : ""}</span>
+                        <span className="text-[16px] leading-[24px] font-semibold text-[#111827]">{branchData?.status === "found" ? branchData.maskedDealer : ""}</span>
                       </div>
                       <div className="flex flex-col gap-[2px] min-w-0">
                         <span className="text-[13px] text-[#4B5563]">Branch code</span>
@@ -305,7 +395,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                       </div>
                       <div className="flex flex-col gap-[2px] min-w-0">
                         <span className="text-[13px] text-[#4B5563]">Branch name</span>
-                        <span className="text-[16px] leading-[24px] font-semibold text-[#111827]">{branchData?.status === "found" ? branchData.branchName : ""}</span>
+                        <span className="text-[16px] leading-[24px] font-semibold text-[#111827]">{branchData?.status === "found" ? branchData.maskedBranch : ""}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-[6px] text-[13px] text-[#4B5563] border-t border-[#E5E7EB] pt-[12px]">
@@ -328,7 +418,7 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                     icon="mail"
                     error={form2.formState.errors.email?.message}
                     helper="We'll send the OpenChat invite link to this address. Use an email you check daily."
-                    warning={branchData?.status === "found" && isDomainWarning(watchedEmail, branchData.dealerDomains) ? `This email isn't on ${branchData.dealerDomains[0]}, your dealer's domain. Approval may take longer.` : undefined}
+                    warning={domainWarning || undefined}
                     {...form2.register("email")}
                   />
                 </div>

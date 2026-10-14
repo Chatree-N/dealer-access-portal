@@ -1,77 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { lookupBranch, isDomainWarning, OTP_RULES, sendOtp, verifyOtp, canResendOtp, step1Schema, step2Schema, step3Schema, isDuplicateRequest } from "../schema";
-
-describe("Branch Lookup Logic", () => {
-  it("returns found with masked values for valid branch 1234", () => {
-    const result = lookupBranch("1234");
-    expect(result.status).toBe("found");
-    if (result.status === "found") {
-      expect(result.dealerDomains).toContain("lotustelecom.example");
-      expect(result.dealerName).toBe("Lotus T…");
-      expect(result.branchName).toBe("LOTUS C…");
-    }
-  });
-
-  it("returns found with masked values for valid branch 5678", () => {
-    const result = lookupBranch("5678");
-    expect(result.status).toBe("found");
-    if (result.status === "found") {
-      expect(result.dealerName).toBe("Harbor M…");
-      expect(result.branchName).toBe("HARBOR W…");
-    }
-  });
-
-  it("returns found with masked values for valid branch 0042", () => {
-    const result = lookupBranch("0042");
-    expect(result.status).toBe("found");
-    if (result.status === "found") {
-      expect(result.branchName).toBe("LOTUS H…");
-    }
-  });
-
-  it("returns found with masked values for long branch name 6001", () => {
-    const result = lookupBranch("6001");
-    expect(result.status).toBe("found");
-    if (result.status === "found") {
-      expect(result.branchName).toBe("ORCHID S…");
-    }
-  });
-
-  it("returns notfound for inactive branch 9999", () => {
-    expect(lookupBranch("9999").status).toBe("notfound");
-  });
-
-  it("returns notfound for empty, whitespace, or unknown branch", () => {
-    expect(lookupBranch("").status).toBe("notfound");
-    expect(lookupBranch("   ").status).toBe("notfound");
-    expect(lookupBranch("9998").status).toBe("notfound");
-    expect(lookupBranch("abcd").status).toBe("notfound");
-  });
-});
-
-describe("Domain Warning Logic", () => {
-  it("warns when domain does not match", () => {
-    expect(isDomainWarning("test@mail.example", ["lotustelecom.example"])).toBe(true);
-  });
-
-  it("does not warn when domain matches exactly or with different case", () => {
-    expect(isDomainWarning("test@lotustelecom.example", ["lotustelecom.example"])).toBe(false);
-    expect(isDomainWarning("TEST@LOTUSTELECOM.EXAMPLE", ["lotustelecom.example"])).toBe(false);
-  });
-  
-  it("does not warn for second domain (lotus-retail.example)", () => {
-    expect(isDomainWarning("test@lotus-retail.example", ["lotustelecom.example", "lotus-retail.example"])).toBe(false);
-  });
-  
-  it("does not warn when dealer has no domains (maple)", () => {
-    expect(isDomainWarning("test@maple.example", [])).toBe(false);
-  });
-
-  it("handles invalid emails gracefully", () => {
-    expect(isDomainWarning("invalidemail", ["lotustelecom.example"])).toBe(false);
-    expect(isDomainWarning("", ["lotustelecom.example"])).toBe(false);
-  });
-});
+import { 
+  OTP_RULES, sendOtp, verifyOtp, canResendOtp, 
+  step1Schema, step2Schema, step3Schema 
+} from "../schema";
 
 describe("OTP Logic", () => {
   it("generates a new state with expiry", () => {
@@ -134,7 +65,7 @@ describe("OTP Logic", () => {
   });
 });
 
-describe("Zod Schemas", () => {
+describe("Client Zod Schemas", () => {
   it("validates step 1", () => {
     expect(step1Schema.safeParse({ branchCode: "1234" }).success).toBe(true);
     expect(step1Schema.safeParse({ branchCode: "" }).success).toBe(false);
@@ -149,17 +80,5 @@ describe("Zod Schemas", () => {
   it("validates step 3", () => {
     expect(step3Schema.safeParse({ consent: true, signature: { type: "typed", value: "Name" } }).success).toBe(true);
     expect(step3Schema.safeParse({ consent: false, signature: { type: "drawn", value: "data" } }).success).toBe(false);
-  });
-});
-
-describe("isDuplicateRequest", () => {
-  it("returns true for pending emails", () => {
-    expect(isDuplicateRequest("pending@example.com")).toBe(true);
-    expect(isDuplicateRequest("DUPE@EXAMPLE.COM")).toBe(true);
-  });
-
-  it("returns false for unknown emails", () => {
-    expect(isDuplicateRequest("new@example.com")).toBe(false);
-    expect(isDuplicateRequest("")).toBe(false);
   });
 });

@@ -92,7 +92,7 @@ Vitest + Testing Library, Playwright + axe-core, PostgreSQL 16 + Drizzle ORM, Ma
 | 1 | Scaffold, design tokens, base components | Done |
 | 2 | Public request form, mock logic, scenarios, tests | Done |
 | 3A | Database foundation (schema, migrations, seed, tests) | Done |
-| 3B | Server-side branch lookup, OTP verification & rate limiting | Planned |
+| 3B | Server-side branch lookup, checks, rate limiting & zero PII | Done |
 | 4 | Admin back-office (approve / reject) | Planned |
 | 5 | Email delivery via Mailpit (OTP and invite) | Planned |
 | 6 | Local runbook and polish | Planned |

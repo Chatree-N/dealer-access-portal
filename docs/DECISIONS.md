@@ -94,3 +94,26 @@ This file tracks significant technical and architectural decisions made througho
 ## 15. Desktop-Only Architecture
 - **Decision:** Desktop-only. Target viewport 1440px. Mobile/responsive layouts are out of scope; WCAG 2.1 SC 1.4.10 Reflow is knowingly not met, all other AA checks still apply.
 - **Rationale:** The application is an enterprise internal dealer web portal meant for desktop workstation environments. Dropping mobile complexity allows cleaner styling, reduced maintenance overhead, and focused accessibility on desktop screens.
+
+## 16. Server-Side Lookup Transport and Rate-Limiting Design (Phase 3B)
+- **Status:** Approved & Implemented
+- **Context:** Transitioning branch lookup, email domain checks, and duplicate request checks from client-side mock fixtures (ADR 12) onto the server backed by PostgreSQL, ensuring the browser never receives dealer/branch data it does not need.
+- **Decision 1 (Transport - Route Handlers over Server Actions):**
+  - Implemented Next.js App Router Route Handlers (`POST /api/branch/lookup`, `POST /api/checks`) rather than Server Actions.
+  - **Rationale:** Route Handlers provide standard HTTP semantics, enabling explicit HTTP 429 Too Many Requests status codes with `Retry-After` headers, standard HTTP 400 Bad Request responses for invalid schemas, clean decouple from React client runtime, and robust rate-limiting controls.
+- **Decision 2 (Data Minimization & Masking):**
+  - Input: 4-digit branch code validated by Zod (`branchCodeSchema`).
+  - Output: strictly `{ status: "found" | "inactive" | "not_found", maskedDealer?: string, maskedBranch?: string }`.
+  - Masking rule: First word + first letter of the second word + "…".
+  - Never returns dms_code, room info, email domains, or full names. Inactive branches return `{ status: "inactive" }` which the UI treats as "Branch not found" (identical to non-existent codes).
+- **Decision 3 (Server-Side Checks):**
+  - **Domain Mismatch Check:** Server checks whether the email domain matches any of the branch dealer's configured domains in `dealer_email_domains`. Returns a warning flag only (`isDomainMismatch: boolean`), never blocks. If the dealer has 0 configured domains, returns false.
+  - **Duplicate Request Check:** Server checks the `requests` table for existing `pending_review` requests for the same branch and email (case-insensitive). Returns only a boolean flag (`isDuplicate: boolean`) without revealing request identifiers or requester identities.
+- **Decision 4 (Atomic Rate Limiting & Honeypot):**
+  - Rate limiting is tracked in the PostgreSQL `rate_limits` table using atomic `INSERT ... ON CONFLICT ("key") DO UPDATE RETURNING` queries to prevent race conditions.
+  - Keys are SHA-256 hashes of client identifier (IP) + action + internal salt. Raw IP addresses and emails are NEVER stored in the database or logs.
+  - Configurable limits: 10 requests / 60 seconds for branch lookup, 20 requests / 60 seconds for checks. Over-limit requests return HTTP 429 with generic message `"Too many requests. Please try again later."`.
+  - Honeypot protection: If the hidden `honeypot` field contains a value, the server silently returns a safe success-looking response (`status: 200`) without querying PostgreSQL or touching sensitive records.
+- **Decision 5 (Zero PII Logging):**
+  - Server logger strictly outputs only event names and HTTP status codes (`{"event": event, "status": statusCode}`).
+  - Automated unit tests enforce that any log line containing an email, 4-digit code, or personal name fails immediately.

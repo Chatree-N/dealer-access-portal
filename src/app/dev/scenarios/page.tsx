@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { RequestForm, FormInitialState } from "../../page";
-import { lookupBranch, sendOtp, verifyOtp, OTP_RULES } from "@/lib/schema";
+import { sendOtp, verifyOtp, OTP_RULES } from "@/lib/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,11 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
   const now = 1700000000000;
   let initialState: FormInitialState = {};
 
-  const defaultBranchData = lookupBranch("1234");
+  const defaultBranchData = {
+    status: "found" as const,
+    maskedDealer: "Lotus T…",
+    maskedBranch: "LOTUS C…",
+  };
 
   if (s === "network") {
     initialState = {
@@ -49,7 +53,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       step: 2,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
-      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
+      branchData: defaultBranchData,
       form2Errors: {
         firstName: "First name is required",
         lastName: "Last name is required",
@@ -61,15 +65,16 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       step: 2,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
-      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
-      form2: { firstName: "Jane", lastName: "Doe", email: "jane.doe@example.com" }
+      branchData: defaultBranchData,
+      form2: { firstName: "Jane", lastName: "Doe", email: "jane.doe@example.com" },
+      domainWarning: "This email isn't on lotustelecom.example, your dealer's domain. Approval may take longer."
     };
   } else if (s === "dupe") {
     initialState = {
       step: 2,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
-      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
+      branchData: defaultBranchData,
       form2: { firstName: "Jane", lastName: "Doe", email: "dupe@example.com" },
       duplicateError: "Request #REQ-0011 was submitted on 01 Oct 2026. We'll email you once it's reviewed."
     };
@@ -78,7 +83,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       step: 2,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
-      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
+      branchData: defaultBranchData,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
       // eslint-disable-next-line react-hooks/purity
       otpState: sendOtp(Date.now())
@@ -90,7 +95,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       step: 2,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
-      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
+      branchData: defaultBranchData,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
       otpState: verRes.newState,
       otpInput: "000000",
@@ -101,7 +106,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       step: 2,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
-      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
+      branchData: defaultBranchData,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
       otpState: { attempts: 1, sentAt: now - 30000, expiresAt: now + OTP_RULES.EXPIRY_MS, isVerified: true }
     };
@@ -110,7 +115,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       step: 3,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
-      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
+      branchData: defaultBranchData,
       sigType: "typed",
       form3: { consent: false, signature: { type: "typed", value: "Jane Doe" } }
     };
@@ -119,7 +124,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       step: 3,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
-      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
+      branchData: defaultBranchData,
       form3Errors: {
         consent: "Consent is required",
         "signature.value": "Signature is required"
@@ -136,7 +141,7 @@ export default async function ScenariosPage({ searchParams }: { searchParams: Pr
       step: 2,
       form1: { branchCode: "1234", honeypot: "" },
       lookupState: "found",
-      branchData: defaultBranchData.status === "found" ? defaultBranchData : null,
+      branchData: defaultBranchData,
       form2: { firstName: "Jane", lastName: "Doe", email: "jane@example.com" },
       otpState: expiredState,
       otpError: "Expired or too many attempts."
