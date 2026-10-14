@@ -16,7 +16,21 @@ export interface RateLimitResult {
   retryAfter?: number;
 }
 
-const SALT = process.env.RATE_LIMIT_SALT || 'openchat-fixed-internal-salt';
+export function getRateLimitSalt(): string {
+  const salt = process.env.RATE_LIMIT_SALT;
+  if (!salt) {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return 'build-time-rate-limit-salt';
+    }
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('RATE_LIMIT_SALT environment variable is required in production');
+    }
+    return 'dev-insecure-rate-limit-salt';
+  }
+  return salt;
+}
+
+const SALT = getRateLimitSalt();
 
 /**
  * Creates a one-way cryptographic SHA-256 hash from a client identifier, action, and salt.

@@ -16,7 +16,7 @@ export const lookupRequestSchema = z.object({
 });
 
 export type LookupOutput = {
-  status: 'found' | 'inactive' | 'not_found';
+  status: 'found' | 'not_found';
   maskedDealer?: string;
   maskedBranch?: string;
 };
@@ -63,7 +63,7 @@ export async function lookupBranch(
 
   const branch = rows[0];
   if (branch.status === 'inactive') {
-    return { status: 'inactive' };
+    return { status: 'not_found' };
   }
 
   return {

@@ -10,6 +10,7 @@ test.describe('Phase 2 Screenshots', () => {
   };
 
   test('generate screenshots', async ({ page }) => {
+    await page.setExtraHTTPHeaders({ 'x-forwarded-for': '192.0.2.199' });
     await page.goto('/');
     
     // Step 1: Branch found (1234)
@@ -18,14 +19,7 @@ test.describe('Phase 2 Screenshots', () => {
     await page.waitForTimeout(500); // wait for lookup
     await takeScreenshots(page, 'step1-found');
 
-    // Step 1: Branch inactive (9999)
-    await page.goto('/');
-    await page.getByLabel(/Branch code/).fill('9999');
-    await page.getByRole('button', { name: 'Verify branch code' }).click();
-    await page.waitForTimeout(500);
-    await takeScreenshots(page, 'step1-inactive');
-
-    // Step 1: Branch not found (0000)
+    // Step 1: Branch not found (0000 / 9999)
     await page.goto('/');
     await page.getByLabel(/Branch code/).fill('0000');
     await page.getByRole('button', { name: 'Verify branch code' }).click();
@@ -61,5 +55,20 @@ test.describe('Phase 2 Screenshots', () => {
     // Step 4: Success
     await page.waitForTimeout(500);
     await takeScreenshots(page, 'step4-success');
+
+    // Step 1: Rate limited (exceeded 10 requests / min)
+    const rateLimitIp = '198.51.100.77';
+    for (let i = 0; i < 11; i++) {
+      await page.request.post('/api/branch/lookup', {
+        headers: { 'x-forwarded-for': rateLimitIp },
+        data: { branchCode: '1234' },
+      });
+    }
+    await page.setExtraHTTPHeaders({ 'x-forwarded-for': rateLimitIp });
+    await page.goto('/');
+    await page.getByLabel(/Branch code/).fill('1234');
+    await page.getByRole('button', { name: 'Verify branch code' }).click();
+    await page.waitForTimeout(500);
+    await takeScreenshots(page, 'step1-ratelimited');
   });
 });

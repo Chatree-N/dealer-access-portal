@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { maskName, branchCodeSchema, lookupRequestSchema } from "@/server/lookup";
 import { checksRequestSchema } from "@/server/checks";
+import { getRateLimitSalt } from "@/server/rate-limit";
 
 describe("Masking Rules", () => {
   it("masks dealer name correctly: first word + space + first letter of second word + …", () => {
@@ -74,4 +75,32 @@ describe("Server Zod Schemas", () => {
       ).toBe(false);
     });
   });
+
+  describe("getRateLimitSalt", () => {
+    beforeEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("returns dev-only default in dev/test when RATE_LIMIT_SALT is absent", () => {
+      vi.stubEnv("RATE_LIMIT_SALT", "");
+      vi.stubEnv("NODE_ENV", "test");
+      expect(getRateLimitSalt()).toBe("dev-insecure-rate-limit-salt");
+    });
+
+    it("throws error in production when RATE_LIMIT_SALT is missing", () => {
+      vi.stubEnv("RATE_LIMIT_SALT", "");
+      vi.stubEnv("NODE_ENV", "production");
+      expect(() => getRateLimitSalt()).toThrow(/RATE_LIMIT_SALT environment variable is required in production/);
+    });
+
+    it("returns configured salt when present", () => {
+      vi.stubEnv("RATE_LIMIT_SALT", "custom-prod-salt-12345");
+      expect(getRateLimitSalt()).toBe("custom-prod-salt-12345");
+    });
+  });
 });
+

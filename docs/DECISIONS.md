@@ -103,17 +103,22 @@ This file tracks significant technical and architectural decisions made througho
   - **Rationale:** Route Handlers provide standard HTTP semantics, enabling explicit HTTP 429 Too Many Requests status codes with `Retry-After` headers, standard HTTP 400 Bad Request responses for invalid schemas, clean decouple from React client runtime, and robust rate-limiting controls.
 - **Decision 2 (Data Minimization & Masking):**
   - Input: 4-digit branch code validated by Zod (`branchCodeSchema`).
-  - Output: strictly `{ status: "found" | "inactive" | "not_found", maskedDealer?: string, maskedBranch?: string }`.
-  - Masking rule: First word + first letter of the second word + "…".
-  - Never returns dms_code, room info, email domains, or full names. Inactive branches return `{ status: "inactive" }` which the UI treats as "Branch not found" (identical to non-existent codes).
+  - Output: strictly `{ status: "found" | "not_found", maskedDealer?: string, maskedBranch?: string }`.
+  - Masking rule: First word + first letter of the second word + "…" (e.g., `Lotus Telecom` -> `Lotus T…`). Single word: word + "…".
+  - Never returns dms_code, room info, email domains, or full names. Inactive branches collapse to `{ status: "not_found" }`, ensuring that inactive branches are completely indistinguishable from non-existent codes in both the API response and the UI to prevent status enumeration.
 - **Decision 3 (Server-Side Checks):**
   - **Domain Mismatch Check:** Server checks whether the email domain matches any of the branch dealer's configured domains in `dealer_email_domains`. Returns a warning flag only (`isDomainMismatch: boolean`), never blocks. If the dealer has 0 configured domains, returns false.
   - **Duplicate Request Check:** Server checks the `requests` table for existing `pending_review` requests for the same branch and email (case-insensitive). Returns only a boolean flag (`isDuplicate: boolean`) without revealing request identifiers or requester identities.
 - **Decision 4 (Atomic Rate Limiting & Honeypot):**
   - Rate limiting is tracked in the PostgreSQL `rate_limits` table using atomic `INSERT ... ON CONFLICT ("key") DO UPDATE RETURNING` queries to prevent race conditions.
-  - Keys are SHA-256 hashes of client identifier (IP) + action + internal salt. Raw IP addresses and emails are NEVER stored in the database or logs.
+  - Keys are SHA-256 hashes of client identifier (IP) + action + salt. Raw IP addresses and emails are NEVER stored in the database or logs.
+  - Salt handling: `RATE_LIMIT_SALT` environment variable is required in production (throws on startup if missing); in dev/test, uses a clearly named dev-only default (`dev-insecure-rate-limit-salt`).
   - Configurable limits: 10 requests / 60 seconds for branch lookup, 20 requests / 60 seconds for checks. Over-limit requests return HTTP 429 with generic message `"Too many requests. Please try again later."`.
   - Honeypot protection: If the hidden `honeypot` field contains a value, the server silently returns a safe success-looking response (`status: 200`) without querying PostgreSQL or touching sensitive records.
 - **Decision 5 (Zero PII Logging):**
   - Server logger strictly outputs only event names and HTTP status codes (`{"event": event, "status": statusCode}`).
   - Automated unit tests enforce that any log line containing an email, 4-digit code, or personal name fails immediately.
+- **Known Limitations:**
+  - `x-forwarded-for` can be spoofed (acceptable for a local demo).
+  - `rate_limits` rows are not purged yet (Phase 5).
+  - duplicate check will move behind OTP verification in Phase 3C.

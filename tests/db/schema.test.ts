@@ -178,21 +178,27 @@ describe('Database Foundation (Phase 3A)', () => {
   });
 
   describe('Phase 3B: Server-side Lookup, Checks, and Rate Limiting', () => {
-    it('lookup statuses: 1234 (found), 9999 (inactive), 0000 (not_found), 0042 (found)', async () => {
+    it('lookup statuses: 1234 (found), 9999 (inactive -> not_found), 0000 (not_found), 0042 (found)', async () => {
       // 1234 -> found with masked names
       const res1234 = await lookupBranch('1234', testDb);
       expect(res1234.status).toBe('found');
       expect(res1234.maskedDealer).toBe('Lotus T…');
       expect(res1234.maskedBranch).toBe('LOTUS C…');
 
-      // 9999 -> inactive
+      // 9999 is inactive in DB, but API collapses it to not_found (indistinguishable from 0000)
       const res9999 = await lookupBranch('9999', testDb);
-      expect(res9999.status).toBe('inactive');
+      expect(res9999.status).toBe('not_found');
       expect(res9999.maskedDealer).toBeUndefined();
+      expect(res9999.maskedBranch).toBeUndefined();
 
       // 0000 -> not_found
       const res0000 = await lookupBranch('0000', testDb);
       expect(res0000.status).toBe('not_found');
+      expect(res0000.maskedDealer).toBeUndefined();
+      expect(res0000.maskedBranch).toBeUndefined();
+
+      // 9999 and 0000 are completely indistinguishable
+      expect(res9999).toEqual(res0000);
 
       // 0042 -> found (leading zeros preserved)
       const res0042 = await lookupBranch('0042', testDb);

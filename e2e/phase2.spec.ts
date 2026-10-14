@@ -2,7 +2,10 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Phase 2 Form', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    // Provide a unique simulated IP per worker to isolate rate limit counters across parallel tests
+    const testIp = `192.0.2.${(testInfo.parallelIndex + 1) * 20 + (testInfo.retry + 1)}`;
+    await page.setExtraHTTPHeaders({ 'x-forwarded-for': testIp });
     await page.goto('/');
   });
 
@@ -63,17 +66,35 @@ test.describe('Phase 2 Form', () => {
     await expect(page.getByRole('heading', { name: 'Request submitted' })).toBeVisible();
   });
 
-  test('inactive branch (9999) displays branch not found and passes axe', async ({ page }) => {
+  test('inactive branch (9999) and not found branch (0000) are indistinguishable in API and UI', async ({ page }) => {
+    // API verification: 9999 and 0000 return identical { status: "not_found" }
+    const res9999 = await page.request.post('/api/branch/lookup', {
+      data: { branchCode: '9999' },
+    });
+    const res0000 = await page.request.post('/api/branch/lookup', {
+      data: { branchCode: '0000' },
+    });
+    expect(res9999.status()).toBe(200);
+    expect(res0000.status()).toBe(200);
+    const json9999 = await res9999.json();
+    const json0000 = await res0000.json();
+    expect(json9999).toEqual({ status: 'not_found' });
+    expect(json0000).toEqual({ status: 'not_found' });
+    expect(json9999).toEqual(json0000);
+
+    // UI verification for 9999
     await page.getByLabel(/Branch code/).fill('9999');
     await page.getByRole('button', { name: 'Verify branch code' }).click();
     await expect(page.getByText(/Branch not found/i)).toBeVisible();
+    await expect(page.getByText(/Sure the code is right\? Contact the team to add your branch\./i)).toBeVisible();
     await checkAxe(page);
-  });
 
-  test('not found branch (0000) displays branch not found and passes axe', async ({ page }) => {
+    // UI verification for 0000
+    await page.goto('/');
     await page.getByLabel(/Branch code/).fill('0000');
     await page.getByRole('button', { name: 'Verify branch code' }).click();
     await expect(page.getByText(/Branch not found/i)).toBeVisible();
+    await expect(page.getByText(/Sure the code is right\? Contact the team to add your branch\./i)).toBeVisible();
     await checkAxe(page);
   });
 
