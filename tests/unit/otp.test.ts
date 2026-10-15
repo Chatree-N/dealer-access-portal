@@ -5,6 +5,7 @@ import {
   hashCode,
   createOtpProof,
   verifyOtpProof,
+  getOtpCodePepper,
   getOtpProofSecret,
   OTP_RULES,
 } from '@/server/otp';
@@ -22,8 +23,8 @@ describe('OTP Unit Tests', () => {
     });
   });
 
-  describe('hashCode', () => {
-    it('generates deterministic SHA-256 hash for code and email', () => {
+  describe('hashCode (HMAC-SHA256 with OTP_CODE_PEPPER)', () => {
+    it('generates deterministic HMAC-SHA256 hash for code and email', () => {
       const hash1 = hashCode('123456', 'user@example.com');
       const hash2 = hashCode('123456', 'user@example.com');
       const hashUpper = hashCode('123456', 'USER@EXAMPLE.COM');
@@ -42,10 +43,16 @@ describe('OTP Unit Tests', () => {
   });
 
   describe('Proof Token signing and verification', () => {
-    it('creates a valid proof token that verifies successfully', () => {
+    it('creates a valid proof token with jti nonce that verifies successfully', () => {
       const email = 'coordinator@dealer.example';
       const proof = createOtpProof(email);
       expect(proof).toContain('.');
+      const [payloadB64] = proof.split('.');
+      const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+      expect(payload.jti).toBeDefined();
+      expect(typeof payload.jti).toBe('string');
+      expect(payload.jti.length).toBeGreaterThanOrEqual(16);
+
       const isValid = verifyOtpProof(proof, email);
       expect(isValid).toBe(true);
     });
@@ -73,12 +80,29 @@ describe('OTP Unit Tests', () => {
       expect(verifyOtpProof('part1.part2.part3', 'user@example.com')).toBe(false);
     });
 
+    it('rejects proof tokens missing jti nonce', () => {
+      const email = 'user@example.com';
+      const noJtiPayload = {
+        email,
+        verifiedAt: Date.now(),
+        exp: Date.now() + OTP_RULES.PROOF_VALIDITY_MS,
+      };
+      const serialized = Buffer.from(JSON.stringify(noJtiPayload)).toString('base64url');
+      const signature = createHmac('sha256', getOtpProofSecret())
+        .update(serialized)
+        .digest('base64url');
+      const proofWithoutJti = `${serialized}.${signature}`;
+
+      expect(verifyOtpProof(proofWithoutJti, email)).toBe(false);
+    });
+
     it('rejects expired proof tokens', () => {
       const email = 'user@example.com';
       const pastPayload = {
         email,
         verifiedAt: Date.now() - OTP_RULES.PROOF_VALIDITY_MS - 1000,
         exp: Date.now() - 1000,
+        jti: 'test-nonce-12345',
       };
       const serialized = Buffer.from(JSON.stringify(pastPayload)).toString('base64url');
       const signature = createHmac('sha256', getOtpProofSecret())
@@ -90,7 +114,7 @@ describe('OTP Unit Tests', () => {
     });
   });
 
-  describe('getOtpProofSecret environment handling', () => {
+  describe('Secret and Pepper environment handling', () => {
     beforeEach(() => {
       vi.unstubAllEnvs();
     });
@@ -113,9 +137,25 @@ describe('OTP Unit Tests', () => {
       );
     });
 
-    it('returns configured secret when provided', () => {
+    it('returns dev fallback in dev/test when OTP_CODE_PEPPER is missing', () => {
+      vi.stubEnv('OTP_CODE_PEPPER', '');
+      vi.stubEnv('NODE_ENV', 'test');
+      expect(getOtpCodePepper()).toBe('dev-insecure-otp-code-pepper');
+    });
+
+    it('throws in production when OTP_CODE_PEPPER is missing', () => {
+      vi.stubEnv('OTP_CODE_PEPPER', '');
+      vi.stubEnv('NODE_ENV', 'production');
+      expect(() => getOtpCodePepper()).toThrow(
+        /OTP_CODE_PEPPER environment variable is required in production/
+      );
+    });
+
+    it('returns configured secret and pepper when provided', () => {
       vi.stubEnv('OTP_PROOF_SECRET', 'custom-production-secret-999');
+      vi.stubEnv('OTP_CODE_PEPPER', 'custom-production-pepper-888');
       expect(getOtpProofSecret()).toBe('custom-production-secret-999');
+      expect(getOtpCodePepper()).toBe('custom-production-pepper-888');
     });
   });
 });

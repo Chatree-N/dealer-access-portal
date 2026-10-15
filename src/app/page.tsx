@@ -10,7 +10,7 @@ import { SignaturePad } from "@/components/ui/SignaturePad";
 import { 
   step1Schema, step2Schema, step3Schema, LookupResult, OtpState, OTP_RULES 
 } from "@/lib/schema";
-import { toggleSignatureMode, getCountdownSeconds } from "@/lib/logic";
+import { toggleSignatureMode } from "@/lib/logic";
 
 export type FormInitialState = {
   step?: number;
@@ -102,12 +102,12 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
   }, [step]);
 
   useEffect(() => {
-    if (!otpState?.sentAt || otpState.isVerified) return;
-    const interval = setInterval(() => {
-      setTimeRemaining(getCountdownSeconds(otpState.sentAt, Date.now(), OTP_RULES.COOLDOWN_MS));
+    if (timeRemaining <= 0) return;
+    const timer = setTimeout(() => {
+      setTimeRemaining((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    return () => clearInterval(interval);
-  }, [otpState]);
+    return () => clearTimeout(timer);
+  }, [timeRemaining]);
 
   // Server-side check for domain mismatch (warning only, never blocks)
   useEffect(() => {

@@ -1,6 +1,6 @@
 import 'server-only';
 import crypto from 'crypto';
-import { eq, desc } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { db as defaultDb } from '@/db/client';
 import * as schema from '@/db/schema';
@@ -13,8 +13,23 @@ export const OTP_RULES = {
   MAX_ATTEMPTS: 3, // 3 attempts then lock
   MAX_RESENDS: 5, // resend cap
   LOCK_DURATION_MS: 15 * 60 * 1000, // 15 minute lockout
+  WINDOW_MS: 60 * 60 * 1000, // 1 hour window for counter reset
   PROOF_VALIDITY_MS: 30 * 60 * 1000, // 30 minutes to finish submission
 };
+
+export function getOtpCodePepper(): string {
+  const pepper = process.env.OTP_CODE_PEPPER;
+  if (!pepper) {
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return 'build-time-otp-code-pepper';
+    }
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('OTP_CODE_PEPPER environment variable is required in production');
+    }
+    return 'dev-insecure-otp-code-pepper';
+  }
+  return pepper;
+}
 
 export function getOtpProofSecret(): string {
   const secret = process.env.OTP_PROOF_SECRET;
@@ -31,14 +46,14 @@ export function getOtpProofSecret(): string {
 }
 
 /**
- * Creates a one-way cryptographic SHA-256 hash of a 6-digit OTP code bound to the email and secret.
+ * Creates a one-way cryptographic HMAC-SHA256 hash of a 6-digit OTP code bound to the email using OTP_CODE_PEPPER.
  * Raw code is never stored in PostgreSQL or logged.
  */
 export function hashCode(code: string, email: string): string {
-  const secret = getOtpProofSecret();
+  const pepper = getOtpCodePepper();
   return crypto
-    .createHash('sha256')
-    .update(`${email.trim().toLowerCase()}:${code.trim()}:${secret}`)
+    .createHmac('sha256', pepper)
+    .update(`${email.trim().toLowerCase()}:${code.trim()}`)
     .digest('hex');
 }
 
@@ -53,16 +68,19 @@ export interface OtpProofPayload {
   email: string;
   verifiedAt: number;
   exp: number;
+  jti: string;
 }
 
 /**
  * Creates an HMAC-signed proof token returned upon successful OTP verification.
+ * Includes a random 16-byte hex nonce (jti) for single-use verification during request submission.
  */
 export function createOtpProof(email: string): string {
   const payload: OtpProofPayload = {
     email: email.trim().toLowerCase(),
     verifiedAt: Date.now(),
     exp: Date.now() + OTP_RULES.PROOF_VALIDITY_MS,
+    jti: crypto.randomBytes(16).toString('hex'),
   };
 
   const serialized = Buffer.from(JSON.stringify(payload)).toString('base64url');
@@ -117,6 +135,10 @@ export function verifyOtpProof(proof: string, expectedEmail: string): boolean {
       return false;
     }
 
+    if (!payload.jti || typeof payload.jti !== 'string') {
+      return false;
+    }
+
     return true;
   } catch {
     return false;
@@ -129,6 +151,7 @@ export type SendOtpResult =
 
 /**
  * Sends a newly generated 6-digit OTP code to the recipient and stores the hashed code in PostgreSQL.
+ * Uses atomic conditional statements to enforce cooldown, resend cap, and locks safely under concurrency.
  */
 export async function sendOtpRecord(
   email: string,
@@ -137,39 +160,96 @@ export async function sendOtpRecord(
 ): Promise<SendOtpResult> {
   const normalizedEmail = email.trim().toLowerCase();
   const now = new Date();
+  const code = generateOtpCode();
+  const codeHash = hashCode(code, normalizedEmail);
+  const expiresAt = new Date(now.getTime() + OTP_RULES.EXPIRY_MS);
+  const cooldownThreshold = new Date(now.getTime() - OTP_RULES.COOLDOWN_MS);
+  const windowThreshold = new Date(now.getTime() - OTP_RULES.WINDOW_MS);
 
-  // Check existing verification record
-  const existing = await targetDb
-    .select()
-    .from(schema.emailVerifications)
-    .where(eq(schema.emailVerifications.email, normalizedEmail))
-    .orderBy(desc(schema.emailVerifications.createdAt))
-    .limit(1);
+  // Atomic conditional update on existing row:
+  // - If row is older than WINDOW_MS: full counter reset (attempts = 0, resend_count = 0, locked_until = null, created_at = now)
+  // - If row is within WINDOW_MS: must not be locked, cooldown must have elapsed, resend_count under cap.
+  //   Inside the window, attempts and locked_until are preserved (not reset).
+  const updateResult = await targetDb.execute<{
+    id: number;
+    email: string;
+    resend_count: number;
+    attempts: number;
+  }>(sql`
+    UPDATE email_verifications
+    SET
+      code_hash = ${codeHash},
+      expires_at = ${expiresAt},
+      last_sent_at = ${now},
+      resend_count = CASE
+        WHEN created_at <= ${windowThreshold} THEN 0
+        ELSE resend_count + 1
+      END,
+      created_at = CASE
+        WHEN created_at <= ${windowThreshold} THEN ${now}
+        ELSE created_at
+      END,
+      attempts = CASE
+        WHEN created_at <= ${windowThreshold} THEN 0
+        ELSE attempts
+      END,
+      locked_until = CASE
+        WHEN created_at <= ${windowThreshold} THEN NULL
+        ELSE locked_until
+      END
+    WHERE email = ${normalizedEmail}
+      AND (
+        created_at <= ${windowThreshold}
+        OR (
+          (locked_until IS NULL OR locked_until <= ${now})
+          AND last_sent_at <= ${cooldownThreshold}
+          AND resend_count < ${OTP_RULES.MAX_RESENDS}
+        )
+      )
+    RETURNING id, email, resend_count, attempts
+  `);
 
-  if (existing.length > 0) {
-    const record = existing[0];
+  if (updateResult.rows.length > 0) {
+    await sender.sendOtpEmail(normalizedEmail, code);
+    return {
+      success: true,
+      cooldownMs: OTP_RULES.COOLDOWN_MS,
+      expiresAt: expiresAt.getTime(),
+    };
+  }
 
-    // Check lock
-    if (record.lockedUntil && record.lockedUntil > now) {
+  // If no row was updated, inspect existing record to return exact failure reason
+  const existingResult = await targetDb.execute<{
+    id: number;
+    locked_until: string | null;
+    last_sent_at: string;
+    resend_count: number;
+  }>(sql`
+    SELECT id, locked_until, last_sent_at, resend_count
+    FROM email_verifications
+    WHERE email = ${normalizedEmail}
+  `);
+
+  if (existingResult.rows.length > 0) {
+    const row = existingResult.rows[0];
+    if (row.locked_until && new Date(row.locked_until) > now) {
       return {
         success: false,
         reason: 'locked',
-        retryAfterMs: record.lockedUntil.getTime() - now.getTime(),
+        retryAfterMs: new Date(row.locked_until).getTime() - now.getTime(),
       };
     }
 
-    // Check cooldown
-    const elapsedSinceSent = now.getTime() - record.lastSentAt.getTime();
-    if (elapsedSinceSent < OTP_RULES.COOLDOWN_MS) {
+    const elapsed = now.getTime() - new Date(row.last_sent_at).getTime();
+    if (elapsed < OTP_RULES.COOLDOWN_MS) {
       return {
         success: false,
         reason: 'cooldown',
-        retryAfterMs: OTP_RULES.COOLDOWN_MS - elapsedSinceSent,
+        retryAfterMs: OTP_RULES.COOLDOWN_MS - elapsed,
       };
     }
 
-    // Check resend count cap
-    if (record.resendCount >= OTP_RULES.MAX_RESENDS) {
+    if (row.resend_count >= OTP_RULES.MAX_RESENDS) {
       return {
         success: false,
         reason: 'max_resends',
@@ -177,40 +257,31 @@ export async function sendOtpRecord(
     }
   }
 
-  const code = generateOtpCode();
-  const codeHash = hashCode(code, normalizedEmail);
-  const expiresAt = new Date(now.getTime() + OTP_RULES.EXPIRY_MS);
+  // No row exists: atomic insert with ON CONFLICT (email) DO NOTHING
+  const insertResult = await targetDb.execute<{ id: number }>(sql`
+    INSERT INTO email_verifications (
+      email, code_hash, expires_at, attempts, last_sent_at, resend_count, locked_until, created_at
+    ) VALUES (
+      ${normalizedEmail}, ${codeHash}, ${expiresAt}, 0, ${now}, 0, NULL, ${now}
+    )
+    ON CONFLICT (email) DO NOTHING
+    RETURNING id
+  `);
 
-  if (existing.length > 0) {
-    await targetDb
-      .update(schema.emailVerifications)
-      .set({
-        codeHash,
-        expiresAt,
-        lastSentAt: now,
-        resendCount: existing[0].resendCount + 1,
-        attempts: 0,
-        lockedUntil: null,
-      })
-      .where(eq(schema.emailVerifications.id, existing[0].id));
-  } else {
-    await targetDb.insert(schema.emailVerifications).values({
-      email: normalizedEmail,
-      codeHash,
-      expiresAt,
-      attempts: 0,
-      lastSentAt: now,
-      resendCount: 0,
-      lockedUntil: null,
-    });
+  if (insertResult.rows.length > 0) {
+    await sender.sendOtpEmail(normalizedEmail, code);
+    return {
+      success: true,
+      cooldownMs: OTP_RULES.COOLDOWN_MS,
+      expiresAt: expiresAt.getTime(),
+    };
   }
 
-  await sender.sendOtpEmail(normalizedEmail, code);
-
+  // Parallel insert won the race; this request is in cooldown
   return {
-    success: true,
-    cooldownMs: OTP_RULES.COOLDOWN_MS,
-    expiresAt: expiresAt.getTime(),
+    success: false,
+    reason: 'cooldown',
+    retryAfterMs: OTP_RULES.COOLDOWN_MS,
   };
 }
 
@@ -225,6 +296,8 @@ export type VerifyOtpResult =
 
 /**
  * Validates a submitted 6-digit OTP code against the salted hash in PostgreSQL.
+ * Uses a single conditional UPDATE statement to atomically increment attempts and set locked_until.
+ * On success, invalidates the code in the database ensuring single-use.
  */
 export async function verifyOtpRecord(
   email: string,
@@ -233,84 +306,92 @@ export async function verifyOtpRecord(
 ): Promise<VerifyOtpResult> {
   const normalizedEmail = email.trim().toLowerCase();
   const now = new Date();
+  const lockUntil = new Date(now.getTime() + OTP_RULES.LOCK_DURATION_MS);
 
-  const existing = await targetDb
-    .select()
-    .from(schema.emailVerifications)
-    .where(eq(schema.emailVerifications.email, normalizedEmail))
-    .orderBy(desc(schema.emailVerifications.createdAt))
-    .limit(1);
+  // 1. Atomic conditional update incrementing attempts only while under MAX_ATTEMPTS and not locked/expired
+  const updateResult = await targetDb.execute<{
+    id: number;
+    code_hash: string;
+    attempts: number;
+    locked_until: string | null;
+  }>(sql`
+    UPDATE email_verifications
+    SET
+      attempts = attempts + 1,
+      locked_until = CASE
+        WHEN attempts + 1 >= ${OTP_RULES.MAX_ATTEMPTS} THEN ${lockUntil}
+        ELSE locked_until
+      END
+    WHERE email = ${normalizedEmail}
+      AND (locked_until IS NULL OR locked_until <= ${now})
+      AND expires_at > ${now}
+      AND attempts < ${OTP_RULES.MAX_ATTEMPTS}
+    RETURNING id, code_hash, attempts, locked_until
+  `);
 
-  if (existing.length === 0) {
-    return { success: false, reason: 'expired' };
-  }
+  if (updateResult.rows.length > 0) {
+    const row = updateResult.rows[0];
+    const expectedHash = hashCode(code, normalizedEmail);
+    const codeHashBuf = Buffer.from(row.code_hash, 'hex');
+    const expectedHashBuf = Buffer.from(expectedHash, 'hex');
 
-  const record = existing[0];
+    const matches =
+      codeHashBuf.length === expectedHashBuf.length &&
+      crypto.timingSafeEqual(codeHashBuf, expectedHashBuf);
 
-  // Check lock
-  if (record.lockedUntil && record.lockedUntil > now) {
+    if (matches) {
+      // Single use: Invalidate the verification code upon successful match
+      await targetDb.execute(sql`
+        DELETE FROM email_verifications WHERE id = ${row.id}
+      `);
+
+      const proof = createOtpProof(normalizedEmail);
+      return { success: true, proof };
+    }
+
+    // Code mismatch: the attempt has been atomically incremented in PostgreSQL
+    if (row.attempts >= OTP_RULES.MAX_ATTEMPTS) {
+      return { success: false, reason: 'max_attempts' };
+    }
+
     return {
       success: false,
-      reason: 'locked',
-      retryAfterMs: record.lockedUntil.getTime() - now.getTime(),
+      reason: 'invalid',
+      remainingAttempts: OTP_RULES.MAX_ATTEMPTS - row.attempts,
     };
   }
 
-  // Check if attempts already exhausted
-  if (record.attempts >= OTP_RULES.MAX_ATTEMPTS) {
-    const lockUntil = new Date(now.getTime() + OTP_RULES.LOCK_DURATION_MS);
-    await targetDb
-      .update(schema.emailVerifications)
-      .set({ lockedUntil: lockUntil })
-      .where(eq(schema.emailVerifications.id, record.id));
+  // No row was updated; inspect record to return exact failure reason
+  const checkResult = await targetDb.execute<{
+    attempts: number;
+    locked_until: string | null;
+    expires_at: string;
+  }>(sql`
+    SELECT attempts, locked_until, expires_at
+    FROM email_verifications
+    WHERE email = ${normalizedEmail}
+  `);
 
-    return { success: false, reason: 'max_attempts' };
-  }
-
-  // Check expiry
-  if (now > record.expiresAt) {
+  if (checkResult.rows.length === 0) {
     return { success: false, reason: 'expired' };
   }
 
-  // Constant-time hash verification
-  const expectedHash = hashCode(code, normalizedEmail);
-  const codeHashBuf = Buffer.from(record.codeHash, 'hex');
-  const expectedHashBuf = Buffer.from(expectedHash, 'hex');
-
-  const matches =
-    codeHashBuf.length === expectedHashBuf.length &&
-    crypto.timingSafeEqual(codeHashBuf, expectedHashBuf);
-
-  if (matches) {
-    await targetDb
-      .update(schema.emailVerifications)
-      .set({ attempts: 0 })
-      .where(eq(schema.emailVerifications.id, record.id));
-
-    const proof = createOtpProof(normalizedEmail);
-    return { success: true, proof };
+  const row = checkResult.rows[0];
+  if (row.locked_until && new Date(row.locked_until) > now) {
+    return {
+      success: false,
+      reason: 'locked',
+      retryAfterMs: new Date(row.locked_until).getTime() - now.getTime(),
+    };
   }
 
-  // Mismatch: increment attempts atomically
-  const newAttempts = record.attempts + 1;
-  const isNowLocked = newAttempts >= OTP_RULES.MAX_ATTEMPTS;
-  const lockedUntil = isNowLocked ? new Date(now.getTime() + OTP_RULES.LOCK_DURATION_MS) : null;
-
-  await targetDb
-    .update(schema.emailVerifications)
-    .set({
-      attempts: newAttempts,
-      lockedUntil,
-    })
-    .where(eq(schema.emailVerifications.id, record.id));
-
-  if (isNowLocked) {
+  if (row.attempts >= OTP_RULES.MAX_ATTEMPTS) {
     return { success: false, reason: 'max_attempts' };
   }
 
-  return {
-    success: false,
-    reason: 'invalid',
-    remainingAttempts: OTP_RULES.MAX_ATTEMPTS - newAttempts,
-  };
+  if (new Date(row.expires_at) <= now) {
+    return { success: false, reason: 'expired' };
+  }
+
+  return { success: false, reason: 'invalid' };
 }

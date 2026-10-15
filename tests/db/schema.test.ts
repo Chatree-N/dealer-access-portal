@@ -9,7 +9,7 @@ import { seed } from '../../src/db/seed';
 import { lookupBranch } from '../../src/server/lookup';
 import { checkEmailDomain, checkDuplicateRequest } from '../../src/server/checks';
 import { checkRateLimit, hashIdentifier } from '../../src/server/rate-limit';
-import { sendOtpRecord, verifyOtpRecord, verifyOtpProof } from '../../src/server/otp';
+import { sendOtpRecord, verifyOtpRecord, verifyOtpProof, OTP_RULES } from '../../src/server/otp';
 import { EmailSender, SendEmailOptions } from '../../src/server/email';
 
 const ADMIN_DB_URL =
@@ -442,7 +442,7 @@ describe('Database Foundation (Phase 3A)', () => {
       }
     });
 
-    it('successful verification resets attempts and returns signed proof token', async () => {
+    it('successful verification returns signed proof token and invalidates code (single use)', async () => {
       const email = 'success-verify@lotustelecom.example';
       const sender = new MemoryEmailSender();
 
@@ -461,12 +461,16 @@ describe('Database Foundation (Phase 3A)', () => {
         expect(verifyOtpProof(vSuccess.proof, email)).toBe(true);
       }
 
-      // Verify attempts reset to 0 in DB
+      // Verify row is invalidated (deleted) in DB to ensure single use
       const rows = await testDb
         .select()
         .from(schema.emailVerifications)
         .where(eq(schema.emailVerifications.email, email));
-      expect(rows[0].attempts).toBe(0);
+      expect(rows).toHaveLength(0);
+
+      // Re-submitting the same code afterwards must fail
+      const vSecond = await verifyOtpRecord(email, code, testDb);
+      expect(vSecond.success).toBe(false);
     });
 
     it('duplicate check moves behind verified proof token', async () => {
@@ -492,9 +496,9 @@ describe('Database Foundation (Phase 3A)', () => {
         status: 'pending_review',
       });
 
-      // Without proof, duplicate check returns false
-      const unverified = await checkDuplicateRequest('1234', testEmail, testDb);
-      expect(unverified.isDuplicate).toBe(true); // helper checks DB directly
+      // Helper checks DB directly
+      const dupeCheck = await checkDuplicateRequest('1234', testEmail, testDb);
+      expect(dupeCheck.isDuplicate).toBe(true);
 
       // Clean up test request
       await testDb.delete(schema.requests).where(eq(schema.requests.id, 'REQ-DUPE-PROOF-1'));
@@ -545,6 +549,148 @@ describe('Database Foundation (Phase 3A)', () => {
       if (!vExp.success) {
         expect(vExp.reason).toBe('expired');
       }
+    });
+
+    it('concurrency: 20 parallel wrong-code verifies never exceed MAX_ATTEMPTS and lock after 3 failures', async () => {
+      const email = 'concurrency-verify@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+      await sendOtpRecord(email, testDb, sender);
+
+      // Fire 20 parallel wrong guesses
+      const results = await Promise.all(
+        Array.from({ length: 20 }, () => verifyOtpRecord(email, '000000', testDb))
+      );
+
+      // Query stored row in DB
+      const rows = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+
+      expect(rows).toHaveLength(1);
+      // Stored attempts never exceeds MAX_ATTEMPTS (3)
+      expect(rows[0].attempts).toBe(OTP_RULES.MAX_ATTEMPTS);
+      expect(rows[0].lockedUntil).not.toBeNull();
+      expect(rows[0].lockedUntil!.getTime()).toBeGreaterThan(Date.now());
+
+      // Exactly 3 counted failures (2 invalid, 1 max_attempts); all subsequent are locked/max_attempts
+      const invalids = results.filter((r) => !r.success && r.reason === 'invalid');
+      const lockeds = results.filter(
+        (r) => !r.success && (r.reason === 'max_attempts' || r.reason === 'locked')
+      );
+      expect(invalids).toHaveLength(2);
+      expect(invalids.length + lockeds.length).toBe(20);
+    });
+
+    it('concurrency: 10 parallel sends for the same email sends exactly 1 email and rest report cooldown', async () => {
+      const email = 'concurrency-send@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      // Fire 10 parallel sends for the same email
+      const results = await Promise.all(
+        Array.from({ length: 10 }, () => sendOtpRecord(email, testDb, sender))
+      );
+
+      // Exactly 1 email was sent
+      expect(sender.sentEmails).toHaveLength(1);
+
+      // Exactly 1 success, 9 cooldowns
+      const successes = results.filter((r) => r.success);
+      const cooldowns = results.filter((r) => !r.success && r.reason === 'cooldown');
+
+      expect(successes).toHaveLength(1);
+      expect(cooldowns).toHaveLength(9);
+    });
+
+    it('resend inside the window does not reset attempts or lock', async () => {
+      const email = 'resend-inside-window@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      await sendOtpRecord(email, testDb, sender);
+
+      // 1 wrong attempt
+      const v1 = await verifyOtpRecord(email, '000000', testDb);
+      expect(v1.success).toBe(false);
+
+      // Fast-forward past 60s cooldown (e.g. 65s), but inside 1-hour window
+      await testDb
+        .update(schema.emailVerifications)
+        .set({ lastSentAt: new Date(Date.now() - 65_000) })
+        .where(eq(schema.emailVerifications.email, email));
+
+      // Resend OTP
+      const resend = await sendOtpRecord(email, testDb, sender);
+      expect(resend.success).toBe(true);
+
+      // Attempts must NOT be reset to 0; resendCount increments to 1
+      const rows = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+      expect(rows[0].attempts).toBe(1);
+      expect(rows[0].resendCount).toBe(1);
+
+      // Trigger lock with 2 more wrong attempts
+      await verifyOtpRecord(email, '000000', testDb);
+      await verifyOtpRecord(email, '000000', testDb);
+
+      const lockCheck = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+      expect(lockCheck[0].attempts).toBe(3);
+      expect(lockCheck[0].lockedUntil).not.toBeNull();
+
+      // Fast-forward past cooldown again
+      await testDb
+        .update(schema.emailVerifications)
+        .set({ lastSentAt: new Date(Date.now() - 65_000) })
+        .where(eq(schema.emailVerifications.email, email));
+
+      // Resend while locked inside window must be rejected
+      const resendWhileLocked = await sendOtpRecord(email, testDb, sender);
+      expect(resendWhileLocked.success).toBe(false);
+      if (!resendWhileLocked.success) {
+        expect(resendWhileLocked.reason).toBe('locked');
+      }
+    });
+
+    it('after the 1-hour window counters reset', async () => {
+      const email = 'window-reset@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      await sendOtpRecord(email, testDb, sender);
+
+      // Exhaust attempts and lock
+      await verifyOtpRecord(email, '000000', testDb);
+      await verifyOtpRecord(email, '000000', testDb);
+      await verifyOtpRecord(email, '000000', testDb);
+
+      // Simulate created_at and last_sent_at > 1 hour ago
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      await testDb
+        .update(schema.emailVerifications)
+        .set({
+          createdAt: twoHoursAgo,
+          lastSentAt: twoHoursAgo,
+          resendCount: 5,
+        })
+        .where(eq(schema.emailVerifications.email, email));
+
+      // Send new OTP after window expired
+      const res = await sendOtpRecord(email, testDb, sender);
+      expect(res.success).toBe(true);
+
+      // Counters and lock must be completely reset
+      const rows = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0].attempts).toBe(0);
+      expect(rows[0].resendCount).toBe(0);
+      expect(rows[0].lockedUntil).toBeNull();
     });
   });
 });

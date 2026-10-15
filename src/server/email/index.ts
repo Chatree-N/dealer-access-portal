@@ -19,12 +19,12 @@ export class SmtpEmailSender implements EmailSender {
   constructor() {
     const host = process.env.SMTP_HOST || 'localhost';
     const port = parseInt(process.env.SMTP_PORT || '1025', 10);
+    const secure = process.env.SMTP_SECURE === 'true';
 
     this.transporter = nodemailer.createTransport({
       host,
       port,
-      secure: false,
-      ignoreTLS: true,
+      secure,
     });
   }
 

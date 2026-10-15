@@ -154,7 +154,7 @@ export const emailVerifications = pgTable(
   'email_verifications',
   {
     id: serial('id').primaryKey(),
-    email: text('email').notNull(),
+    email: text('email').notNull().unique(),
     codeHash: text('code_hash').notNull(), // hashed OTP
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     attempts: integer('attempts').notNull().default(0),
