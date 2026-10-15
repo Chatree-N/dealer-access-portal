@@ -93,16 +93,19 @@ export function createOtpProof(email: string): string {
 }
 
 /**
- * Verifies an HMAC-signed proof token in constant time.
+ * Verifies an HMAC-signed proof token and returns the verified payload, or null if invalid/expired.
  */
-export function verifyOtpProof(proof: string, expectedEmail: string): boolean {
+export function decodeAndVerifyOtpProof(
+  proof: string,
+  expectedEmail: string
+): OtpProofPayload | null {
   if (!proof || typeof proof !== 'string' || !proof.includes('.')) {
-    return false;
+    return null;
   }
 
   const parts = proof.split('.');
   if (parts.length !== 2) {
-    return false;
+    return null;
   }
 
   const [serialized, signature] = parts;
@@ -115,11 +118,11 @@ export function verifyOtpProof(proof: string, expectedEmail: string): boolean {
   const expectedSigBuf = Buffer.from(expectedSignature);
 
   if (sigBuf.length !== expectedSigBuf.length) {
-    return false;
+    return null;
   }
 
   if (!crypto.timingSafeEqual(sigBuf, expectedSigBuf)) {
-    return false;
+    return null;
   }
 
   try {
@@ -128,21 +131,28 @@ export function verifyOtpProof(proof: string, expectedEmail: string): boolean {
     );
 
     if (payload.email !== expectedEmail.trim().toLowerCase()) {
-      return false;
+      return null;
     }
 
     if (Date.now() > payload.exp) {
-      return false;
+      return null;
     }
 
     if (!payload.jti || typeof payload.jti !== 'string') {
-      return false;
+      return null;
     }
 
-    return true;
+    return payload;
   } catch {
-    return false;
+    return null;
   }
+}
+
+/**
+ * Verifies an HMAC-signed proof token in constant time.
+ */
+export function verifyOtpProof(proof: string, expectedEmail: string): boolean {
+  return decodeAndVerifyOtpProof(proof, expectedEmail) !== null;
 }
 
 export type SendOtpResult =

@@ -150,4 +150,31 @@ This file tracks significant technical and architectural decisions made througho
 - **Known Limitations:**
   - `x-forwarded-for` can be spoofed (acceptable for local demo).
   - `rate_limits` rows and expired/unverified `email_verifications` rows are not purged yet (Phase 5 maintenance).
-  - Submit endpoint (`/api/request/submit`) will record and check `jti` to ensure proof tokens are single-use upon submission in Phase 3C-2.
+  - Submit endpoint (`/api/request/submit`) records and checks `jti` via UNIQUE database constraint to prevent proof token replay (implemented in ADR 18).
+
+## 18. Request Submission Endpoint, Proof Replay Protection, & Signature Storage (Phase 3C-2)
+- **Status:** Approved & Implemented
+- **Context:** Requester submits verified branch access request with digital signature, legal consent confirmation, and HMAC proof token.
+- **Decision 1 (Cryptographic Proof Verification & Database-Enforced Single-Use Replay Protection):**
+  - Verification proof token issued by Step 2 OTP verification must be presented to `/api/request/submit`.
+  - Server verifies proof token HMAC signature (`OTP_PROOF_SECRET`), ensures `Date.now() <= exp`, matches requester email, and extracts 16-byte random hex nonce `jti`.
+  - Database schema enforces replay protection at the PostgreSQL level via `requests.proof_jti` UNIQUE constraint (`drizzle/0002_funny_magma.sql`). Any attempt to reuse a proof token fails immediately with HTTP 409 (`reason: 'proof_replayed'`).
+- **Decision 2 (Server-Side StorageProvider & Local Disk Isolation):**
+  - Abstracted behind `StorageProvider` interface (`put`, `get`, `delete`) in `src/server/storage/index.ts`.
+  - Default `LocalDiskStorageProvider` stores files under `STORAGE_DIR` (default `.data/`, gitignored).
+  - Keys are server-generated random UUIDs with extensions (`${crypto.randomUUID()}.${ext}`). User-controlled keys are strictly prohibited.
+  - Path traversal protection: Any key containing path separators (`/`, `\`) or `..`, or resolving outside `rootDir` is immediately rejected.
+- **Decision 3 (Signature Validation & Content Security):**
+  - `drawn`: PNG data URL format (`data:image/png;base64,...`). Server decodes and verifies the 8-byte PNG magic header (`89 50 4E 47 0D 0A 1A 0A`) and enforces a 200 KB size ceiling. Corrupted headers, invalid base64, or non-PNG MIME types are rejected.
+  - `typed`: Trimmed text between 2 and 80 characters. Control characters (`[\x00-\x1F\x7F]`) are strictly rejected.
+  - Storage & Write ordering: Signature is written through `StorageProvider` first. Next, the request record and audit log are committed in a single database transaction. If the database transaction fails, the stored file is deleted (rollback cleanup).
+- **Decision 4 (Server-Side Re-validation & Data Leak Prevention):**
+  - Re-validates branch active status (inactive and non-existent branches both return identical generic 404 `Branch not found` to prevent branch enumeration).
+  - Re-validates consent text version against the active `consent_texts` record.
+  - Re-validates duplicate requests (blocks submission if a `pending_review` request exists for same branch + email).
+  - Domain mismatch is calculated server-side and recorded in `requests.domain_mismatch`.
+  - API response strictly returns `{ requestId: "REQ-xxxx" }`. No branch details, no user emails, and no room URLs are ever returned or displayed.
+  - Audit logging records only IDs and structural event names; requester names, emails, and phone numbers are strictly omitted.
+- **Known Limitations:**
+  - `x-forwarded-for` can be spoofed (acceptable for local demo).
+  - Rate limit counters and expired verification records are not purged yet (scheduled for Phase 5 maintenance).

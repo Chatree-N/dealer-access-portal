@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { Client } from 'pg';
+import path from 'path';
+import fs from 'fs';
 
 test.describe('Phase 2 Form', () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -24,7 +27,7 @@ test.describe('Phase 2 Form', () => {
 
     // Step 2: Details
     await checkAxe(page);
-    const happyEmail = 'happy.path@lotustelecom.example';
+    const happyEmail = `happy.${Date.now()}@lotustelecom.example`;
     await page.getByLabel(/First name/).fill('Happy');
     await page.getByLabel(/Last name/).fill('Path');
     await page.getByLabel(/Email address/).fill(happyEmail);
@@ -57,7 +60,21 @@ test.describe('Phase 2 Form', () => {
     await page.getByLabel(/I have read and agree to the terms and conditions/).check();
     await page.getByRole('button', { name: /type your name instead/i }).click();
     await page.getByLabel(/Signature \(typed\)/).fill('Happy Path');
+
+    // Intercept submit request and response
+    const submitPromise = page.waitForResponse((resp) =>
+      resp.url().includes('/api/request/submit')
+    );
     await page.getByRole('button', { name: 'Submit request' }).click();
+    const submitResp = await submitPromise;
+    expect(submitResp.status()).toBe(200);
+
+    const submitJson = await submitResp.json();
+    expect(submitJson.requestId).toMatch(/^REQ-\d{4}$/);
+    const submitBodyStr = JSON.stringify(submitJson);
+    expect(submitBodyStr).not.toContain('http');
+    expect(submitBodyStr).not.toContain('openchat');
+    expect(submitBodyStr).not.toContain(happyEmail);
 
     // Step 4: Success
     await expect(page.getByRole('heading', { name: 'Request submitted' })).toBeVisible();
@@ -68,6 +85,29 @@ test.describe('Phase 2 Form', () => {
     const content = await page.content();
     expect(content).not.toContain('line' + '.me');
     expect(content).not.toContain('openchat.example/rooms');
+
+    // Assert requests row exists with status pending_review
+    const dbClient = new Client({
+      connectionString: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/openchat',
+    });
+    await dbClient.connect();
+    const dbRes = await dbClient.query(
+      'SELECT id, status, signature_ref, signature_kind FROM requests WHERE email = $1 ORDER BY created_at DESC LIMIT 1',
+      [happyEmail]
+    );
+    await dbClient.end();
+
+    expect(dbRes.rows.length).toBe(1);
+    const dbRow = dbRes.rows[0];
+    expect(dbRow.status).toBe('pending_review');
+    expect(dbRow.signature_kind).toBe('typed');
+
+    // Assert signature file exists under STORAGE_DIR
+    const storageDir = path.resolve(process.cwd(), process.env.STORAGE_DIR || '.data');
+    const sigPath = path.join(storageDir, dbRow.signature_ref);
+    expect(fs.existsSync(sigPath)).toBe(true);
+    const sigContent = fs.readFileSync(sigPath, 'utf-8');
+    expect(sigContent).toBe('Happy Path');
   });
 
   test('honeypot silently succeeds', async ({ page }) => {

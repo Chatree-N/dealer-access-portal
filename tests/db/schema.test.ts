@@ -9,8 +9,11 @@ import { seed } from '../../src/db/seed';
 import { lookupBranch } from '../../src/server/lookup';
 import { checkEmailDomain, checkDuplicateRequest } from '../../src/server/checks';
 import { checkRateLimit, hashIdentifier } from '../../src/server/rate-limit';
-import { sendOtpRecord, verifyOtpRecord, verifyOtpProof, OTP_RULES } from '../../src/server/otp';
+import { sendOtpRecord, verifyOtpRecord, verifyOtpProof, createOtpProof, OTP_RULES } from '../../src/server/otp';
 import { EmailSender, SendEmailOptions } from '../../src/server/email';
+import { submitRequest } from '../../src/server/submit';
+import { LocalDiskStorageProvider } from '../../src/server/storage';
+import fs from 'node:fs/promises';
 
 const ADMIN_DB_URL =
   process.env.ADMIN_DATABASE_URL || 'postgresql://user:password@localhost:5432/openchat';
@@ -791,6 +794,337 @@ describe('Database Foundation (Phase 3A)', () => {
       if (!res.success) {
         expect(res.reason).toBe('locked');
       }
+    });
+  });
+
+  describe('Phase 3C-2: Request Submission, Proof Replay Protection, and Storage (7)', () => {
+    const testStorageDir = path.resolve(process.cwd(), '.test-submit-storage');
+    let testStorage: LocalDiskStorageProvider;
+
+    beforeAll(async () => {
+      testStorage = new LocalDiskStorageProvider('.test-submit-storage');
+      await fs.mkdir(testStorageDir, { recursive: true });
+    });
+
+    afterAll(async () => {
+      await fs.rm(testStorageDir, { recursive: true, force: true });
+    });
+
+    it('successfully submits a valid request with typed signature and audit log', async () => {
+      const email = 'submit.tester@lotustelecom.example';
+      const proof = createOtpProof(email);
+
+      const res = await submitRequest(
+        {
+          branchCode: '1234',
+          firstName: 'Somchai',
+          lastName: 'Jaidee',
+          email,
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Somchai Jaidee' },
+          proof,
+        },
+        '127.0.0.1',
+        'TestRunner/1.0',
+        testDb,
+        testStorage
+      );
+
+      expect(res.success).toBe(true);
+      if (!res.success) return;
+      expect(res.requestId).toMatch(/^REQ-\d{4}$/);
+
+      // Verify row in requests table
+      const reqRows = await testDb
+        .select()
+        .from(schema.requests)
+        .where(eq(schema.requests.id, res.requestId));
+
+      expect(reqRows).toHaveLength(1);
+      const req = reqRows[0];
+      expect(req.status).toBe('pending_review');
+      expect(req.email).toBe(email);
+      expect(req.firstName).toBe('Somchai');
+      expect(req.lastName).toBe('Jaidee');
+      expect(req.signatureKind).toBe('typed');
+      expect(req.domainMismatch).toBe(false);
+
+      // Verify signature file in storage
+      const sigFile = await testStorage.get(req.signatureRef);
+      expect(sigFile).not.toBeNull();
+      expect(sigFile?.bytes.toString('utf-8')).toBe('Somchai Jaidee');
+
+      // Verify audit_log row has no names/emails in before/after
+      const auditRows = await testDb
+        .select()
+        .from(schema.auditLog)
+        .where(eq(schema.auditLog.entityId, res.requestId));
+
+      expect(auditRows).toHaveLength(1);
+      const audit = auditRows[0];
+      expect(audit.actor).toBe('public_requester');
+      expect(audit.action).toBe('create_request');
+      const afterJson = JSON.stringify(audit.after);
+      expect(afterJson).not.toContain('Somchai');
+      expect(afterJson).not.toContain('Jaidee');
+      expect(afterJson).not.toContain(email);
+    });
+
+    it('jti replay is rejected by database unique constraint', async () => {
+      const email = 'replay.tester@lotustelecom.example';
+      const proof = createOtpProof(email);
+
+      // 1st submission succeeds
+      const res1 = await submitRequest(
+        {
+          branchCode: '1234',
+          firstName: 'Alice',
+          lastName: 'Smith',
+          email,
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Alice Smith' },
+          proof,
+        },
+        '127.0.0.1',
+        null,
+        testDb,
+        testStorage
+      );
+      expect(res1.success).toBe(true);
+
+      // 2nd submission with the IDENTICAL proof (same jti) for another branch
+      const res2 = await submitRequest(
+        {
+          branchCode: '5678',
+          firstName: 'Alice',
+          lastName: 'Smith',
+          email,
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Alice Smith' },
+          proof,
+        },
+        '127.0.0.1',
+        null,
+        testDb,
+        testStorage
+      );
+      expect(res2.success).toBe(false);
+      if (!res2.success) {
+        expect(res2.reason).toBe('proof_replayed');
+        expect(res2.status).toBe(409);
+      }
+    });
+
+    it('rejects duplicate pending_review request for same branch and email', async () => {
+      const email = 'dupe.tester@lotustelecom.example';
+      const proof1 = createOtpProof(email);
+
+      const res1 = await submitRequest(
+        {
+          branchCode: '1234',
+          firstName: 'Bob',
+          lastName: 'Ross',
+          email,
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Bob Ross' },
+          proof: proof1,
+        },
+        '127.0.0.1',
+        null,
+        testDb,
+        testStorage
+      );
+      expect(res1.success).toBe(true);
+
+      // Mint a fresh proof for the same email
+      const proof2 = createOtpProof(email);
+      const res2 = await submitRequest(
+        {
+          branchCode: '1234',
+          firstName: 'Bob',
+          lastName: 'Ross',
+          email,
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Bob Ross' },
+          proof: proof2,
+        },
+        '127.0.0.1',
+        null,
+        testDb,
+        testStorage
+      );
+      expect(res2.success).toBe(false);
+      if (!res2.success) {
+        expect(res2.reason).toBe('duplicate');
+        expect(res2.status).toBe(409);
+      }
+    });
+
+    it('rejects submission for inactive or unknown branch with generic not_found', async () => {
+      const email = 'inactive.branch@lotustelecom.example';
+      const proof = createOtpProof(email);
+
+      // 9999 is seeded as inactive
+      const resInactive = await submitRequest(
+        {
+          branchCode: '9999',
+          firstName: 'Eve',
+          lastName: 'None',
+          email,
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Eve None' },
+          proof,
+        },
+        '127.0.0.1',
+        null,
+        testDb,
+        testStorage
+      );
+      expect(resInactive.success).toBe(false);
+      if (!resInactive.success) {
+        expect(resInactive.reason).toBe('branch_not_found');
+        expect(resInactive.status).toBe(404);
+      }
+
+      // 0000 does not exist
+      const resUnknown = await submitRequest(
+        {
+          branchCode: '0000',
+          firstName: 'Eve',
+          lastName: 'None',
+          email,
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Eve None' },
+          proof,
+        },
+        '127.0.0.1',
+        null,
+        testDb,
+        testStorage
+      );
+      expect(resUnknown.success).toBe(false);
+      if (!resUnknown.success) {
+        expect(resUnknown.reason).toBe('branch_not_found');
+        expect(resUnknown.status).toBe(404);
+      }
+    });
+
+    it('rejects submission when proof email does not match requester email', async () => {
+      const proof = createOtpProof('authorized@lotustelecom.example');
+
+      const res = await submitRequest(
+        {
+          branchCode: '1234',
+          firstName: 'Mallory',
+          lastName: 'Spoof',
+          email: 'imposter@lotustelecom.example',
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Mallory Spoof' },
+          proof,
+        },
+        '127.0.0.1',
+        null,
+        testDb,
+        testStorage
+      );
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.reason).toBe('invalid_proof');
+        expect(res.status).toBe(400);
+      }
+    });
+
+    it('rejects submission with expired proof token', async () => {
+      const email = 'expired.proof@lotustelecom.example';
+      // Craft expired proof
+      const now = Date.now();
+      const payload = {
+        email,
+        verifiedAt: now - 700_000,
+        exp: now - 1000,
+        jti: 'test-expired-jti',
+      };
+      const serialized = Buffer.from(JSON.stringify(payload)).toString('base64url');
+      const crypto = await import('node:crypto');
+      const sig = crypto
+        .createHmac('sha256', process.env.OTP_PROOF_SECRET || 'dev-otp-proof-secret-example')
+        .update(serialized)
+        .digest('base64url');
+      const expiredProof = `${serialized}.${sig}`;
+
+      const res = await submitRequest(
+        {
+          branchCode: '1234',
+          firstName: 'Late',
+          lastName: 'User',
+          email,
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Late User' },
+          proof: expiredProof,
+        },
+        '127.0.0.1',
+        null,
+        testDb,
+        testStorage
+      );
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.reason).toBe('invalid_proof');
+        expect(res.status).toBe(400);
+      }
+    });
+
+    it('rollback deletes the stored file if database insert fails', async () => {
+      const email = 'rollback.tester@lotustelecom.example';
+      const proof = createOtpProof(email);
+
+      // Create a mock DB wrapper that throws during transaction
+      const failingDb = {
+        select: testDb.select.bind(testDb),
+        execute: testDb.execute.bind(testDb),
+        transaction: async () => {
+          throw new Error('Simulated database write failure');
+        },
+      } as unknown as NodePgDatabase<typeof schema>;
+
+      const beforeFiles = await fs.readdir(testStorageDir);
+
+      const res = await submitRequest(
+        {
+          branchCode: '1234',
+          firstName: 'Rollback',
+          lastName: 'Test',
+          email,
+          consent: true,
+          consentVersion: 'v0-draft',
+          signature: { kind: 'typed', value: 'Rollback Test' },
+          proof,
+        },
+        '127.0.0.1',
+        null,
+        failingDb,
+        testStorage
+      );
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.reason).toBe('database_error');
+      }
+
+      // Verify that no orphan file remained in storage after rollback
+      const afterFiles = await fs.readdir(testStorageDir);
+      expect(afterFiles).toEqual(beforeFiles);
     });
   });
 });

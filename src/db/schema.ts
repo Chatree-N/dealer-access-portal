@@ -6,6 +6,7 @@ import {
   timestamp,
   pgEnum,
   jsonb,
+  boolean,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
@@ -139,6 +140,8 @@ export const requests = pgTable(
     inviteSentAt: timestamp('invite_sent_at', { withTimezone: true }),
     ipHash: text('ip_hash'),
     userAgent: text('user_agent'),
+    proofJti: text('proof_jti').unique(),
+    domainMismatch: boolean('domain_mismatch').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [

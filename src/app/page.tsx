@@ -96,6 +96,8 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
 
   // Step 4 State
   const [reqId, setReqId] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (headingRef.current) headingRef.current.focus();
@@ -302,11 +304,78 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
     setStep(3);
   });
 
-  const handleStep3 = form3.handleSubmit(() => {
-    // Retain proof token for Phase 3C-2 / Phase 4 submission endpoint
-    void otpProof;
-    setReqId("#REQ-0042");
-    setStep(4);
+  const handleStep3 = form3.handleSubmit(async (data) => {
+    if (form1.getValues("honeypot")) {
+      setReqId("#REQ-0001");
+      setStep(4);
+      return;
+    }
+
+    if (!otpProof) {
+      setOtpError("Verification expired. Please verify your email again.");
+      setStep(2);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const res = await fetch("/api/request/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          branchCode: form1.getValues("branchCode"),
+          firstName: form2.getValues("firstName"),
+          lastName: form2.getValues("lastName"),
+          email: watchedEmail,
+          consent: data.consent,
+          consentVersion: "v0-draft",
+          signature: {
+            kind: data.signature.type,
+            value: data.signature.value,
+          },
+          proof: otpProof,
+          honeypot: form1.getValues("honeypot") || undefined,
+        }),
+      });
+
+      const resData = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setIsSubmitting(false);
+
+        // Duplicate response: send user back to step 2 with existing message
+        if (res.status === 409 && resData.message?.toLowerCase().includes("pending")) {
+          setDuplicateError("A request for this email is already pending approval.");
+          setStep(2);
+          return;
+        }
+
+        // Expired verification or replayed proof: send user back to step 2
+        if (
+          (res.status === 400 && resData.message?.toLowerCase().includes("verification")) ||
+          (res.status === 409 && resData.message?.toLowerCase().includes("already been used"))
+        ) {
+          setOtpError("Verification expired or invalid. Please verify your email again.");
+          setOtpState(null);
+          setOtpProof("");
+          setStep(2);
+          return;
+        }
+
+        setSubmitError(resData.message || "Failed to submit request. Please try again.");
+        return;
+      }
+
+      setIsSubmitting(false);
+      const returnedId = resData.requestId || "REQ-0001";
+      setReqId(returnedId.startsWith("#") ? returnedId : `#${returnedId}`);
+      setStep(4);
+    } catch {
+      setIsSubmitting(false);
+      setSubmitError("Network error: Could not connect to the server.");
+    }
   });
 
   return (
@@ -610,9 +679,16 @@ export function RequestForm({ initialState = {} }: { initialState?: FormInitialS
                   )}
                 </div>
 
+                {submitError && (
+                  <div className="p-3 bg-[#FEF2F2] border border-[#FCA5A5] rounded-[10px] text-sm text-[#991B1B] flex items-center gap-2">
+                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 7.5v5.5M12 16.5h.01"></path></svg>
+                    <span>{submitError}</span>
+                  </div>
+                )}
+
                 <div className="mt-[40px] flex items-center justify-between gap-[16px]">
                   <Button type="button" variant="secondary" onClick={() => setStep(2)} className="min-w-[112px]">Back</Button>
-                  <Button type="submit" className="min-w-[140px]">Submit request</Button>
+                  <Button type="submit" disabled={isSubmitting} className="min-w-[140px]">{isSubmitting ? "Submitting..." : "Submit request"}</Button>
                 </div>
               </form>
             )}

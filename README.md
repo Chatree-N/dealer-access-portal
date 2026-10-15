@@ -4,9 +4,8 @@ A portfolio demo of a **Line OpenChat access request** flow for dealer branch st
 branch lookup → email OTP → consent + signature → admin approval → invite by email.
 Built with Next.js, TypeScript and a violet Soft-UI design system.
 
-> **Status: work in progress.** The public request form (Phase 2) is complete.
-> The database foundation (Phase 3A: schema, migrations, seed, and db tests) is implemented.
-> Server-side API integration, admin back-office, and real email delivery are planned (see Roadmap).
+> **Status: work in progress.** The public request form (Phase 2), database foundation (Phase 3A), server-side lookup/checks (Phase 3B), real OTP via Mailpit (Phase 3C-1), and request submission with signature storage and proof replay protection (Phase 3C-2) are complete.
+> Admin back-office (Phase 4) and invite email delivery (Phase 5) are planned (see Roadmap).
 > **All data is fictional.** Companies, people, branch codes and emails are invented (`*.example` domains).
 > The OpenChat room URL is a placeholder and is never sent to the browser.
 
@@ -94,6 +93,7 @@ Vitest + Testing Library, Playwright + axe-core, PostgreSQL 16 + Drizzle ORM, Ma
 | 3A | Database foundation (schema, migrations, seed, tests) | Done |
 | 3B | Server-side branch lookup, checks, rate limiting & zero PII | Done |
 | 3C-1 | Real OTP via Mailpit with hashed codes and signed proof | Done |
+| 3C-2 | Request submission, signature storage, and proof replay protection | Done |
 | 4 | Admin back-office (approve / reject) | Planned |
 | 5 | Invite email delivery, rate limit purging | Planned |
 | 6 | Local runbook and polish | Planned |

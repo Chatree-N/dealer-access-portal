@@ -33,7 +33,7 @@ test.describe('Phase 2 Screenshots', () => {
     await page.waitForTimeout(500);
     
     // Step 2: Details
-    const screenshotEmail = 'screenshot.user@lotustelecom.example';
+    const screenshotEmail = `screenshot.${Date.now()}@lotustelecom.example`;
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByLabel(/First name/).fill('Happy');
     await page.getByLabel(/Last name/).fill('Path');
@@ -82,6 +82,7 @@ test.describe('Phase 2 Screenshots', () => {
     await page.getByRole('button', { name: 'Submit request' }).click();
 
     // Step 4: Success
+    await expect(page.getByRole('heading', { name: 'Request submitted' })).toBeVisible();
     await page.waitForTimeout(500);
     await takeScreenshots(page, 'step4-success');
 
