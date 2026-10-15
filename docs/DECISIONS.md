@@ -149,5 +149,5 @@ This file tracks significant technical and architectural decisions made througho
   - Email content strictly contains the 6-digit code and expiration statement; room invite links are never included.
 - **Known Limitations:**
   - `x-forwarded-for` can be spoofed (acceptable for local demo).
-  - `rate_limits` rows are not purged yet (Phase 5).
+  - `rate_limits` rows and expired/unverified `email_verifications` rows are not purged yet (Phase 5 maintenance).
   - Submit endpoint (`/api/request/submit`) will record and check `jti` to ensure proof tokens are single-use upon submission in Phase 3C-2.

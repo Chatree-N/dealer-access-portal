@@ -29,7 +29,7 @@
 2. **Public Form (Mocked):** Pages 1-4 with all 10 state scenarios + lookup states. *AC: Form logic transitions correctly; UI matches 1440px desktop screenshots.*
 3. **Database & API Integration:** Drizzle schema, branch lookup, OTP flow. *AC: Rate limits work. OTP emails send. Branch lookup masks data.*
 4. **Admin Back-Office:** Single admin login, Activity log, Approve/Reject flows, Bulk actions. *AC: Admin can preview emails, assign rooms, and reject with reason. Full audit trail recorded.*
-5. **Hardening & Security:** E2E tests, a11y audit, CSRF, final pass. *AC: Zero WCAG AA violations. PII stripped from logs.*
+5. **Hardening & Security:** E2E tests, a11y audit, CSRF, purge maintenance job for expired/unverified `email_verifications` rows and old `rate_limits` rows, final pass. *AC: Zero WCAG AA violations. PII stripped from logs.*
 6. **Local runbook + README:** Setup in under 5 minutes. *AC: README contains seed, demo script, screenshots, and easy startup instructions.*
 
 ## Demo Data

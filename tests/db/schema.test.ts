@@ -692,6 +692,107 @@ describe('Database Foundation (Phase 3A)', () => {
       expect(rows[0].resendCount).toBe(0);
       expect(rows[0].lockedUntil).toBeNull();
     });
+
+    it('concurrency: 5 parallel verifies with the CORRECT code yields exactly 1 proof', async () => {
+      const email = 'concurrency-correct@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      await sendOtpRecord(email, testDb, sender);
+      const code = sender.sentEmails[0].code!;
+
+      // 5 concurrent requests with the identical valid code
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () => verifyOtpRecord(email, code, testDb))
+      );
+
+      const successes = results.filter((r) => r.success);
+      const failures = results.filter((r) => !r.success);
+
+      // Exactly 1 request successfully consumes the code and receives a proof
+      expect(successes).toHaveLength(1);
+      if (successes[0].success) {
+        expect(successes[0].proof).toBeDefined();
+      }
+
+      // The other 4 fail
+      expect(failures).toHaveLength(4);
+
+      // Database row was deleted
+      const rows = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+      expect(rows).toHaveLength(0);
+    });
+
+    it('resets attempts and clears locked_until when lock has expired inside rolling window', async () => {
+      const email = 'expired-lock-reset@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      await sendOtpRecord(email, testDb, sender);
+
+      // Trigger lock (3 wrong attempts)
+      await verifyOtpRecord(email, '000000', testDb);
+      await verifyOtpRecord(email, '000000', testDb);
+      await verifyOtpRecord(email, '000000', testDb);
+
+      const lockedRows = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+      expect(lockedRows[0].attempts).toBe(3);
+      expect(lockedRows[0].lockedUntil).not.toBeNull();
+
+      // Fast-forward lockedUntil to the past (lock expired), lastSentAt past cooldown, but createdAt inside window
+      await testDb
+        .update(schema.emailVerifications)
+        .set({
+          lockedUntil: new Date(Date.now() - 5_000),
+          lastSentAt: new Date(Date.now() - 65_000),
+        })
+        .where(eq(schema.emailVerifications.email, email));
+
+      // Resend OTP after lock expired
+      const resendRes = await sendOtpRecord(email, testDb, sender);
+      expect(resendRes.success).toBe(true);
+
+      // Stored attempts must be reset to 0 and lockedUntil cleared to null
+      const updatedRows = await testDb
+        .select()
+        .from(schema.emailVerifications)
+        .where(eq(schema.emailVerifications.email, email));
+      expect(updatedRows[0].attempts).toBe(0);
+      expect(updatedRows[0].lockedUntil).toBeNull();
+      expect(updatedRows[0].resendCount).toBe(1);
+    });
+
+    it('rejects resend while lock is still active inside rolling window', async () => {
+      const email = 'active-lock-reject@lotustelecom.example';
+      const sender = new MemoryEmailSender();
+
+      await sendOtpRecord(email, testDb, sender);
+
+      // Trigger lock
+      await verifyOtpRecord(email, '000000', testDb);
+      await verifyOtpRecord(email, '000000', testDb);
+      await verifyOtpRecord(email, '000000', testDb);
+
+      // Fast-forward lastSentAt past cooldown, but lock remains active (10 minutes in future)
+      await testDb
+        .update(schema.emailVerifications)
+        .set({
+          lastSentAt: new Date(Date.now() - 65_000),
+          lockedUntil: new Date(Date.now() + 10 * 60 * 1000),
+        })
+        .where(eq(schema.emailVerifications.email, email));
+
+      const res = await sendOtpRecord(email, testDb, sender);
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.reason).toBe('locked');
+      }
+    });
   });
 });
+
 

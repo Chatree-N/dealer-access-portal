@@ -191,10 +191,12 @@ export async function sendOtpRecord(
       END,
       attempts = CASE
         WHEN created_at <= ${windowThreshold} THEN 0
+        WHEN locked_until IS NOT NULL AND locked_until <= ${now} THEN 0
         ELSE attempts
       END,
       locked_until = CASE
         WHEN created_at <= ${windowThreshold} THEN NULL
+        WHEN locked_until IS NOT NULL AND locked_until <= ${now} THEN NULL
         ELSE locked_until
       END
     WHERE email = ${normalizedEmail}
@@ -340,13 +342,19 @@ export async function verifyOtpRecord(
       crypto.timingSafeEqual(codeHashBuf, expectedHashBuf);
 
     if (matches) {
-      // Single use: Invalidate the verification code upon successful match
-      await targetDb.execute(sql`
-        DELETE FROM email_verifications WHERE id = ${row.id}
+      // Single use: Invalidate the verification code atomically upon match
+      const deleteResult = await targetDb.execute<{ id: number }>(sql`
+        DELETE FROM email_verifications
+        WHERE id = ${row.id} AND code_hash = ${row.code_hash}
+        RETURNING id
       `);
 
-      const proof = createOtpProof(normalizedEmail);
-      return { success: true, proof };
+      if (deleteResult.rows.length > 0) {
+        const proof = createOtpProof(normalizedEmail);
+        return { success: true, proof };
+      }
+
+      return { success: false, reason: 'invalid' };
     }
 
     // Code mismatch: the attempt has been atomically incremented in PostgreSQL
